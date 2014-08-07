@@ -68,6 +68,7 @@ public class RosterTool extends HttpServlet {
 			VelocityEngine ve = new VelocityEngine();
             Properties props = new Properties();
             props.setProperty("file.resource.loader.path",config.getServletContext().getRealPath("/WEB-INF"));
+            props.setProperty("runtime.log.logsystem.class","org.apache.velocity.runtime.log.NullLogSystem");
             ve.init(props);
             bootstrapTemplate = ve.getTemplate("bootstrap.vm");
 		} catch (Throwable t) {
