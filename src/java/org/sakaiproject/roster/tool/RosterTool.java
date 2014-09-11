@@ -99,6 +99,7 @@ public class RosterTool extends HttpServlet {
 		request.setAttribute("i18n", rl);
 		request.setAttribute("siteMaintainer", sakaiProxy.isSiteMaintainer(sakaiProxy.getCurrentSiteId()));
 
+        response.setContentType("text/html");
         request.getRequestDispatcher("/WEB-INF/bootstrap.jsp").include(request, response);	
 	}
 }
