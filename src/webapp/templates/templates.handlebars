@@ -92,7 +92,7 @@ templates['enrollment_status'] = template({"1":function(depth0,helpers,partials,
   if (stack1 != null) { buffer += stack1; }
   return buffer;
 },"12":function(depth0,helpers,partials,data,depths) {
-  var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "			    <tr onMouseOver=\"this.className='rosterTableRowHighlight'\" onMouseOut=\"this.className='rosterTableRow'\">\n					<td>\n";
+  var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "			    <tr class=\"roster-table-row\">\n					<td>\n";
   stack1 = helpers['if'].call(depth0, (depths[2] != null ? depths[2].viewProfile : depths[2]), {"name":"if","hash":{},"fn":this.program(13, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   stack1 = helpers['if'].call(depth0, (depths[2] != null ? depths[2].firstNameLastName : depths[2]), {"name":"if","hash":{},"fn":this.program(15, data, depths),"inverse":this.program(17, data, depths),"data":data});
@@ -227,7 +227,7 @@ templates['grouped'] = template({"1":function(depth0,helpers,partials,data,depth
   if (stack1 != null) { buffer += stack1; }
   return buffer;
 },"10":function(depth0,helpers,partials,data,depths) {
-  var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "                                <tr onMouseOver=\"this.className='rosterTableRowHighlight'\" onMouseOut=\"this.className='rosterTableRow'\">\n                                    <td>\n";
+  var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "                                <tr class=\"roster-table-row\">\n                                    <td>\n";
   stack1 = helpers['if'].call(depth0, (depths[3] != null ? depths[3].viewProfile : depths[3]), {"name":"if","hash":{},"fn":this.program(11, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   stack1 = helpers['if'].call(depth0, (depths[3] != null ? depths[3].firstNameLastName : depths[3]), {"name":"if","hash":{},"fn":this.program(13, data, depths),"inverse":this.program(15, data, depths),"data":data});
@@ -380,7 +380,7 @@ templates['overview'] = template({"1":function(depth0,helpers,partials,data) {
   if (stack1 != null) { buffer += stack1; }
   return buffer;
 },"9":function(depth0,helpers,partials,data,depths) {
-  var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "			<tr onMouseOver=\"this.className='rosterTableRowHighlight'\" onMouseOut=\"this.className='rosterTableRow'\">\n                <td>\n";
+  var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "			<tr class=\"roster-table-row\">\n                <td>\n";
   stack1 = helpers['if'].call(depth0, (depths[2] != null ? depths[2].viewProfile : depths[2]), {"name":"if","hash":{},"fn":this.program(10, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   stack1 = helpers['if'].call(depth0, (depths[2] != null ? depths[2].firstNameLastName : depths[2]), {"name":"if","hash":{},"fn":this.program(12, data, depths),"inverse":this.program(14, data, depths),"data":data});
@@ -786,7 +786,7 @@ templates['ungrouped'] = template({"1":function(depth0,helpers,partials,data) {
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "facet_userId", {"name":"translate","hash":{},"data":data})))
     + "</a></th>\n";
 },"3":function(depth0,helpers,partials,data,depths) {
-  var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "			<tr onMouseOver=\"this.className='rosterTableRowHighlight'\" onMouseOut=\"this.className='rosterTableRow'\">\n                <td>\n";
+  var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "			<tr class=\"roster-table-row\">\n                <td>\n";
   stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewProfile : depths[1]), {"name":"if","hash":{},"fn":this.program(4, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].firstNameLastName : depths[1]), {"name":"if","hash":{},"fn":this.program(6, data, depths),"inverse":this.program(8, data, depths),"data":data});

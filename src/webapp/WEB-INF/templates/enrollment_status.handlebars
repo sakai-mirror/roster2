@@ -28,7 +28,7 @@
 	{{else}}
 		{{#each enrollment}}
 			{{#if canViewEnrollment}}
-			    <tr onMouseOver="this.className='rosterTableRowHighlight'" onMouseOut="this.className='rosterTableRow'">
+			    <tr class="roster-table-row">
 					<td>
                     {{#if ../../viewProfile}}
                         <a href="javascript:;" class="profile" rel="{{formattedProfileUrl}}">
