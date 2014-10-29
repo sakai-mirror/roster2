@@ -458,6 +458,31 @@ templates['overview_header'] = template({"1":function(depth0,helpers,partials,da
   if (stack1 != null) { buffer += stack1; }
   return buffer;
 },"useData":true});
+templates['overview_table_shell'] = template({"1":function(depth0,helpers,partials,data) {
+  var helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
+  return "                <th width=\"25%\"><a href=\"#\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "facet_userId", {"name":"translate","hash":{},"data":data})))
+    + "</a></th>\n";
+},"3":function(depth0,helpers,partials,data) {
+  var helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
+  return "				<th width=\"25%\"><a href=\"#\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "facet_email", {"name":"translate","hash":{},"data":data})))
+    + "</a></th>\n";
+},"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
+  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "<table cellspacing=\"0\" cellpadding=\"0\" class=\"listHier rosterTable\" id=\"roster_form_rosterTable\">\n	<thead>\n		<tr>\n            <th width=\"35%\"><a href=\"#\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "facet_name", {"name":"translate","hash":{},"data":data})))
+    + "</a></th>\n";
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.viewUserDisplayId : depth0), {"name":"if","hash":{},"fn":this.program(1, data),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.viewEmail : depth0), {"name":"if","hash":{},"fn":this.program(3, data),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + "            <th width=\"15%\"><a href=\"#\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "facet_role", {"name":"translate","hash":{},"data":data})))
+    + "</a></th>\n		</tr>\n	</thead>\n	<tbody id=\"roster-table-body\">\n	</tbody>\n</table>\n";
+},"useData":true});
+templates['pager'] = template({"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
+  return "    <form>\n        <img class=\"first\" src=\"/library/image/silk/control_start_blue.png\"/>\n        <img class=\"prev\" src=\"/library/image/silk/control_rewind_blue.png\"/>\n        <input class=\"pagedisplay\" type=\"text\"/>\n        <img class=\"next\" src=\"/library/image/silk/control_fastforward_blue.png\"/>\n        <img class=\"last\" src=\"/library/image/silk/control_end_blue.png\"/>\n        <select class=\"pagesize\">\n            <option selected=\"selected\" value=\"1\">1</option>\n            <option value=\"20\">20</option>\n            <option value=\"30\">30</option>\n            <option  value=\"40\">40</option>\n        </select>\n    </form>\n";
+  },"useData":true});
 templates['participants'] = template({"1":function(depth0,helpers,partials,data) {
   var lambda=this.lambda, escapeExpression=this.escapeExpression;
   return escapeExpression(lambda(depth0, depth0));

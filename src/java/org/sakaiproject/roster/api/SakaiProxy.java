@@ -139,7 +139,12 @@ public interface SakaiProxy {
 	 *            <code>false</code>.
 	 * @return the list of viewable members from the specified site.
 	 */
-	public List<RosterMember> getSiteMembership(String siteId, boolean includeConnectionStatus);
+	public List<RosterMember> getSiteMembership(String siteId, int pageNumber, int pageSize, boolean includeConnectionStatus);
+
+    /**
+     * Returns the total number of visible members in the specified site
+     */
+	public int getSiteMembersTotal(String siteId);
 	
 	/**
 	 * Returns the list of viewable members from the specified group.
@@ -148,7 +153,12 @@ public interface SakaiProxy {
 	 * @param groupId the ID of the group.
 	 * @return the list of viewable members from the specified group.
 	 */
-	public List<RosterMember> getGroupMembership(String siteId, String groupId);
+	public List<RosterMember> getGroupMembership(String siteId, String groupId, int pageNumber, int pageSize);
+
+    /**
+     * Returns the total number of visible members in the specified site group
+     */
+	public int getGroupMembersTotal(String siteId, String groupId);
 	
 	/**
 	 * Returns site information for the specified site.

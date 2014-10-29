@@ -182,3 +182,8 @@ th.rosterSortableTableHeaderSortUp {
 th.rosterSortableTableHeaderSortDown {
     background-image: url(../images/desc.gif);
 }
+
+#roster_pager {
+    float: right;
+    padding-bottom: 5px;
+}

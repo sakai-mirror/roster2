@@ -254,23 +254,34 @@ public class SakaiProxyImpl implements SakaiProxy {
 	/**
 	 * {@inheritDoc}
 	 */
-	public List<RosterMember> getSiteMembership(String siteId, boolean includeConnectionStatus) {
-		return getMembership(siteId, null, includeConnectionStatus);
+	public List<RosterMember> getSiteMembership(String siteId, int pageNumber, int pageSize, boolean includeConnectionStatus) {
+		return getMembership(siteId, null, pageNumber, pageSize, includeConnectionStatus);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public List<RosterMember> getGroupMembership(String siteId, String groupId) {
-		return getMembership(siteId, groupId, false);
+	public int getSiteMembersTotal(String siteId) {
+		return getMembership(siteId, null, -1, -1, false).size();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public List<RosterMember> getGroupMembership(String siteId, String groupId, int pageNumber, int pageSize) {
+		return getMembership(siteId, groupId, pageNumber, pageSize, false);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public int getGroupMembersTotal(String siteId, String groupId) {
+		return getMembership(siteId, groupId, -1, -1, false).size();
 	}
 	
-	private List<RosterMember> getMembership(String siteId, String groupId,
-			boolean includeConnectionStatus) {
+	private List<RosterMember> getMembership(String siteId, String groupId, int pageNumber, int pageSize, boolean includeConnectionStatus) {
 
         String userId = getCurrentUserId();
-
-		List<RosterMember> rosterMembers = new ArrayList<RosterMember>();
 
 		Site site = null;
 		try {
@@ -289,18 +300,36 @@ public class SakaiProxyImpl implements SakaiProxy {
 			return null;
 		}
 
-		for (Member member : membership) {
+        Member[] members = new Member[membership.size()];
+        members = membership.toArray(members);
 
-			try {
+        if (pageSize < members.length && pageNumber > -1 && pageSize > 0) {
+            int start = pageNumber * pageSize;
+            int end = start + pageSize;
 
-				RosterMember rosterMember = 
-					getRosterMember(member, site, includeConnectionStatus, userId);
+            if (end > members.length) {
+                end = members.length;
+            }
 
-				rosterMembers.add(rosterMember);
+            members = Arrays.copyOfRange(members, start, end);
+        }
 
-			} catch (UserNotDefinedException e) {
-				log.warn("user not found: " + e.getId());
-			}
+		List<RosterMember> rosterMembers = new ArrayList<RosterMember>();
+
+		for (Member member : members) {
+
+            if (member != null) {
+                try {
+
+                    RosterMember rosterMember = 
+                        getRosterMember(member, site, includeConnectionStatus, userId);
+
+                    rosterMembers.add(rosterMember);
+
+                } catch (UserNotDefinedException e) {
+                    log.warn("user not found: " + e.getId());
+                }
+            }
 		}
 
 		if (rosterMembers.size() == 0) {

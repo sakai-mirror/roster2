@@ -62,6 +62,7 @@
                 <div id="roster_header"></div>
                 <div id="roster_section_filter"></div>
                 <div id="roster_search"></div>
+                <div id="roster_pager"></div>
                 <div id="roster_content"></div>
             </form>
         </div>

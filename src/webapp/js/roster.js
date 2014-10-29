@@ -141,22 +141,75 @@
             if (roster.lowResMode) {
                 $('#roster_navbar_dropdown').val(roster.STATE_OVERVIEW);
             }
-            
-            roster.getMembers(searchQuery, false, state, false, function (members) {
+
+            roster.render('overview_header',
+                    { 'siteTitle': roster.site.title,
+                    'displayTitleMsg': roster.currentUserPermissions.viewAllMembers },
+                    'roster_header');
+
+            if (roster.site.siteGroups.length > 0) {
+                roster.render('section_filter',
+                        { 'groupToViewText': roster.groupToViewText, 'siteGroups': roster.site.siteGroups },
+                        'roster_section_filter');
                 
-                roster.render('overview_header',
-                        { 'siteTitle': roster.site.title,
-                        'displayTitleMsg': roster.currentUserPermissions.viewAllMembers },
-                        'roster_header');
-            
-                if (roster.site.siteGroups.length > 0) {
-                    roster.render('section_filter',
-                            { 'groupToViewText': roster.groupToViewText, 'siteGroups': roster.site.siteGroups },
-                            'roster_section_filter');
-                    
-                } else {
-                    $('#roster_section_filter').html('');
-                }
+            } else {
+                $('#roster_section_filter').html('');
+            }
+
+            roster.render('pager', {}, 'roster_pager');
+
+            roster.render('overview_table_shell', {
+                    'roster.language': roster.language,
+                    'siteId': roster.siteId,
+                    'groupToView': roster.groupToView,
+                    'firstNameLastName': roster.firstNameLastName,
+                    'viewEmail': roster.viewEmail,
+                    'viewUserDisplayId': roster.viewUserDisplayId,
+                    'viewProfile': roster.currentUserPermissions.viewProfile
+                }, 'roster_content');
+
+            $(document).ready(function () {
+
+                $('#roster_form_rosterTable')
+                    .tablesorter(roster.getOverviewTableSort())
+                    .tablesorterPager({
+                        container: $("#roster_pager"),
+                        positionFixed: false,
+                        size: 1,
+                        ajaxUrl: "/direct/roster-membership/" + roster.siteId + "/get-membership.json?pageNumber={page}&pageSize={size}&sorted=false",
+                        ajaxProcessing: function (data) {
+
+                            var members = data.membership;
+
+                            console.log("total members: " + members.length);
+
+                            var rows = [];
+
+                            members.forEach(function (member) {
+
+                                var row = [member.displayName];
+                                if (roster.viewUserDisplayId) {
+                                    row.push(member.displayId);
+                                }
+                                if (roster.viewEmail) {
+                                    row.push(member.email);
+                                }
+                                row.push(member.role);
+                                rows.push(row);
+                            });
+
+                            return [ data.total, rows ];
+                        }
+                    })
+                    .bind("sortEnd", function () {
+
+                        roster.currentSortColumn = this.config.sortList[0][0];
+                        roster.currentSortDirection = this.config.sortList[0][1];
+                    });
+            });
+
+            /*
+            roster.getMembers(searchQuery, false, state, false, function (members) {
 
                 var roles = roster.getRolesUsingRosterMembers(members, roster.site.userRoles);
             
@@ -183,13 +236,23 @@
 
                     var overviewSortParams = roster.getOverviewTableSort();
                     
-                    $('#roster_form_rosterTable').tablesorter(overviewSortParams);
-                    
-                    $('#roster_form_rosterTable').bind("sortEnd", function () {
+                    $('#roster_form_rosterTable')
+                        .tablesorter(overviewSortParams)
+                        .tablesorterPager({
+                            container: $("#roster_pager"),
+                            positionFixed: false,
+                            size: 1,
+                            ajaxUrl: "/direct/roster-membership/" + roster.siteId + "/get-membership.json?page={page+1}&size=10&sorted=" + sorted,
+                            ajaxProcessing: function (data) {
 
-                        roster.currentSortColumn = this.config.sortList[0][0];
-                        roster.currentSortDirection = this.config.sortList[0][1];
-                    });
+                                console.log(data);
+                            }
+                        })
+                        .bind("sortEnd", function () {
+
+                            roster.currentSortColumn = this.config.sortList[0][0];
+                            roster.currentSortDirection = this.config.sortList[0][1];
+                        });
 
                     roster.addProfilePopups();
                     
@@ -197,7 +260,7 @@
                         setMainFrameHeight(window.frameElement.id);
                     }
                 });
-            });
+            });*/
             
         } else if (roster.STATE_PICTURES === state) {
 
@@ -334,16 +397,18 @@
             if (roster.lowResMode) {
                 $('#roster_navbar_dropdown').val(roster.STATE_GROUP_MEMBERSHIP);
             }
+
+            roster.render('groups_header',
+                    { 'siteTitle': roster.site.title,
+                    'displayTitleMsg': roster.currentUserPermissions.viewAllMembers }, 'roster_header');
+
+            $('#roster_search').html('');
+
+            roster.render('pager', {}, 'roster_pager');
             
             roster.getRosterMembership(null, null, null, null, state, false, function (siteMembers) {
 
                 var roles = roster.getRolesUsingRosterMembers(siteMembers, roster.site.userRoles);
-            
-                roster.render('groups_header',
-                        { 'siteTitle': roster.site.title,
-                        'displayTitleMsg': roster.currentUserPermissions.viewAllMembers }, 'roster_header');
-                            
-                $('#roster_search').html('');
                             
                 if (roster.i18n.roster_group_bygroup === roster.grouped) {
                     
@@ -402,7 +467,9 @@
 
                     var groupSortParams = roster.getGroupMembershipTableSort();
                     
-                    $('table').tablesorter(groupSortParams);
+                    $('table')
+                        .tablesorter(groupSortParams)
+                        .tablesorterPager({container: $("#roster_pager"), positionFixed: false, size: 1})
 
                     roster.addProfilePopups();
                     
@@ -724,7 +791,7 @@
         if (roster.groupToViewText === roster.i18n.roster_sections_all || roster.groupToViewText === roster.i18n.roster_section_sep_line) {
             // view all users
 
-            roster.getRosterMembership(null, sorted, null, null, state,forceOfficialPicture, function (members) {
+            roster.getRosterMembership(null, sorted, null, null, state, forceOfficialPicture, function (members) {
                 callback(roster.filter(members, searchQuery));
             });
         } else {

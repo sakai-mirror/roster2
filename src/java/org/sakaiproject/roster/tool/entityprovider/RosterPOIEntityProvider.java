@@ -324,9 +324,9 @@ public class RosterPOIEntityProvider extends AbstractEntityProvider implements
 		List<RosterMember> rosterMembers;
 		
 		if (DEFAULT_GROUP_ID.equals(groupId)) {
-			rosterMembers = sakaiProxy.getSiteMembership(siteId, false);
+			rosterMembers = sakaiProxy.getSiteMembership(siteId, -1, -1, false);
 		} else {
-			rosterMembers = sakaiProxy.getGroupMembership(siteId, groupId);
+			rosterMembers = sakaiProxy.getGroupMembership(siteId, groupId, -1, -1);
 		}
 		
 		if (null == rosterMembers) {

@@ -36,6 +36,7 @@ import org.sakaiproject.entitybroker.exception.EntityException;
 import org.sakaiproject.entitybroker.util.AbstractEntityProvider;
 import org.sakaiproject.roster.api.RosterMember;
 import org.sakaiproject.roster.api.RosterMemberComparator;
+import org.sakaiproject.roster.api.RosterMemberContainer;
 import org.sakaiproject.roster.api.SakaiProxy;
 
 import lombok.Setter;
@@ -64,6 +65,8 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 	public final static String KEY_SORT_FIELD					= "sortField";
 	public final static String KEY_SORT_DIRECTION				= "sortDirection";
 	public final static String KEY_GROUP_ID						= "groupId";
+    public final static String KEY_PAGE_NUMBER                  = "pageNumber";
+	public final static String KEY_PAGE_SIZE                    = "pageSize";
 	public final static String KEY_ENROLLMENT_SET_ID			= "enrollmentSetId";
 	public final static String KEY_INCLUDE_CONNECTION_STATUS	= "includeConnectionStatus";
 	
@@ -100,12 +103,34 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 					KEY_INCLUDE_CONNECTION_STATUS).toString());
 		}
 
+		int pageNumber = -1;
+		if (parameters.containsKey(KEY_PAGE_NUMBER)) {
+			String pageNumberString = parameters.get(KEY_PAGE_NUMBER).toString();
+            try {
+                pageNumber = Integer.parseInt(pageNumberString);
+            } catch (NumberFormatException nfe) {
+            }
+		}
+
+		int pageSize = -1;
+		if (parameters.containsKey(KEY_PAGE_SIZE)) {
+			String pageSizeString = parameters.get(KEY_PAGE_SIZE).toString();
+            try {
+                pageSize = Integer.parseInt(pageSizeString);
+            } catch (NumberFormatException nfe) {
+            }
+		}
+
+        RosterMemberContainer container = new RosterMemberContainer();
+
 		List<RosterMember> membership = null;
 		// if no group ID specified, retrieve site membership, else retrieve group
 		if (null == groupId) {
-			membership = sakaiProxy.getSiteMembership(reference.getId(), includeConnectionStatus);
+			membership = sakaiProxy.getSiteMembership(reference.getId(), pageNumber, pageSize, includeConnectionStatus);
+			container.total = sakaiProxy.getSiteMembersTotal(reference.getId());
 		} else {
-			membership = sakaiProxy.getGroupMembership(reference.getId(), groupId);
+			membership = sakaiProxy.getGroupMembership(reference.getId(), groupId, pageNumber, pageSize);
+			container.total = sakaiProxy.getGroupMembersTotal(reference.getId(), groupId);
 		}
 		
 		if (null == membership) {
@@ -120,7 +145,9 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 							.getFirstNameLastName()));
 		}
 
-		return membership;
+        container.membership = membership;
+
+		return container;
 	}
 			
 	@EntityCustomAction(action = "get-site", viewKey = EntityView.VIEW_SHOW)
