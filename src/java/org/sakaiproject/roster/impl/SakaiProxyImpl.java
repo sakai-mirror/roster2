@@ -300,8 +300,14 @@ public class SakaiProxyImpl implements SakaiProxy {
 			return null;
 		}
 
-        Member[] members = new Member[membership.size()];
-        members = membership.toArray(members);
+        //Member[] members = new Member[membership.size()];
+        //members = membership.toArray(members);
+
+		Map<String, User> userMap = getUserMap(membership);
+		Collection<Group> groups = site.getGroups();
+
+        /*
+		for (Member member : membership) {
 
         if (pageSize < members.length && pageNumber > -1 && pageSize > 0) {
             int start = pageNumber * pageSize;
@@ -310,25 +316,25 @@ public class SakaiProxyImpl implements SakaiProxy {
             if (end > members.length) {
                 end = members.length;
             }
+				RosterMember rosterMember = 
+					getRosterMember(userMap, groups, member, site, includeConnectionStatus, userId);
 
             members = Arrays.copyOfRange(members, start, end);
         }
+        */
 
 		List<RosterMember> rosterMembers = new ArrayList<RosterMember>();
 
-		for (Member member : members) {
+		for (Member member : membership) {
+            try {
 
-            if (member != null) {
-                try {
+                RosterMember rosterMember = 
+                    getRosterMember(userMap, groups, member, site, includeConnectionStatus, userId);
 
-                    RosterMember rosterMember = 
-                        getRosterMember(member, site, includeConnectionStatus, userId);
+                rosterMembers.add(rosterMember);
 
-                    rosterMembers.add(rosterMember);
-
-                } catch (UserNotDefinedException e) {
-                    log.warn("user not found: " + e.getId());
-                }
+            } catch (UserNotDefinedException e) {
+                log.warn("user not found: " + e.getId());
             }
 		}
 
@@ -339,6 +345,26 @@ public class SakaiProxyImpl implements SakaiProxy {
 		return rosterMembers;
 
 	}
+		
+    private Map<String, User> getUserMap(Set<Member> members) {
+        Map<String, User> userMap = new HashMap<String, User>();
+        Set<String> userIds = new HashSet<String>();
+        // Build a map of userId to role
+        for (Iterator<Member> iter = members.iterator(); iter.hasNext();) {
+            Member member = iter.next();
+            if (member.isActive()) {
+				userIds.add(member.getUserId());
+	        }
+        }
+        // Get the user objects
+        List<User> users = userDirectoryService.getUsers(userIds);
+        for (Iterator<User> iter = users.iterator(); iter.hasNext();)
+        {
+            User user = iter.next();
+            userMap.put(user.getId(), user);
+        }
+        return userMap;
+    }
 		
 	private Map<String, RosterMember> getMembershipMapped(String siteId,
 			String groupId, boolean filtered) {
@@ -370,11 +396,13 @@ public class SakaiProxyImpl implements SakaiProxy {
 			return null;
 		}
 
+		Map<String, User> userMap = getUserMap(membership);
+		Collection<Group> groups = site.getGroups();
 		for (Member member : membership) {
 
 			try {
 
-				RosterMember rosterMember = getRosterMember(member, site, false, userId);
+				RosterMember rosterMember = getRosterMember(userMap, groups, member, site, false, userId);
 
 				rosterMembers.put(rosterMember.getEid(), rosterMember);
 
@@ -533,12 +561,15 @@ public class SakaiProxyImpl implements SakaiProxy {
 		return membership;
 	}
 	
-	private RosterMember getRosterMember(Member member, Site site,
+	private RosterMember getRosterMember(Map<String, User> userMap, Collection<Group> groups, Member member, Site site,
 			boolean includeConnectionStatus, String currentUserId) throws UserNotDefinedException {
 
 		String userId = member.getUserId();
 
-		User user = userDirectoryService.getUser(userId);
+		User user = userMap.get(userId);
+		if (user==null) {
+			throw new UserNotDefinedException(userId);
+		}
 
 		RosterMember rosterMember = new RosterMember(userId);
 		rosterMember.setEid(user.getEid());
@@ -549,13 +580,12 @@ public class SakaiProxyImpl implements SakaiProxy {
 		rosterMember.setDisplayName(user.getDisplayName());
 		rosterMember.setSortName(user.getSortName());
 
-		Collection<Group> groups = site.getGroupsWithMember(userId);
-		Iterator<Group> groupIterator = groups.iterator();
-
-		while (groupIterator.hasNext()) {
-
-			Group group = groupIterator.next();
+		for (Group group : groups)
+		{
+			if (group.getMember(userId)!=null)
+			{
 			rosterMember.addGroup(group.getId(), group.getTitle());
+		}
 		}
 
         if (true == includeConnectionStatus && connectionsLogic != null) {
