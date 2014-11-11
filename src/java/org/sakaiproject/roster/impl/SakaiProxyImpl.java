@@ -45,6 +45,9 @@ import org.sakaiproject.coursemanagement.api.Enrollment;
 import org.sakaiproject.coursemanagement.api.EnrollmentSet;
 import org.sakaiproject.coursemanagement.api.Section;
 import org.sakaiproject.exception.IdUnusedException;
+import org.sakaiproject.memory.api.Cache;
+import org.sakaiproject.memory.api.MemoryService;
+import org.sakaiproject.memory.api.SimpleConfiguration;
 import org.sakaiproject.profile2.logic.ProfileConnectionsLogic;
 import org.sakaiproject.roster.api.RosterEnrollment;
 import org.sakaiproject.roster.api.RosterFunctions;
@@ -79,6 +82,7 @@ public class SakaiProxyImpl implements SakaiProxy {
 	private FunctionManager functionManager;
 	private GroupProvider groupProvider;
 	private PrivacyManager privacyManager;
+	private MemoryService memoryService;
 	private ProfileConnectionsLogic connectionsLogic;
 	private SecurityService securityService;
 	private ServerConfigurationService serverConfigurationService;
@@ -254,19 +258,74 @@ public class SakaiProxyImpl implements SakaiProxy {
 	/**
 	 * {@inheritDoc}
 	 */
-	public List<RosterMember> getSiteMembership(String siteId, boolean includeConnectionStatus) {
-		return getMembership(siteId, null, includeConnectionStatus);
+	public List<RosterMember> getSiteMembership(String siteId) {
+		return getMembership(siteId, null);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	public List<RosterMember> getGroupMembership(String siteId, String groupId) {
-		return getMembership(siteId, groupId, false);
+		return getMembership(siteId, groupId);
 	}
+
+	public RosterMember getMember(String siteId, String userId) {
+
+        User user = null;
+        try {
+            user = userDirectoryService.getUser(userId);
+        } catch (UserNotDefinedException e) {
+			log.error("User '" + userId + "' not found. Returning null ...");
+            return null;
+        }
+
+		Site site = null;
+		try {
+			site = siteService.getSite(siteId);
+		} catch (IdUnusedException e) {
+			log.error("Site '" + siteId + "' not found. Returning null ...");
+            return null;
+		}
+
+		RosterMember rosterMember = new RosterMember(userId);
+		rosterMember.setEid(user.getEid());
+
+        Member member = site.getMember(userId);
+
+		rosterMember.setDisplayId(member.getUserDisplayId());
+		rosterMember.setRole(member.getRole().getId());
+
+		rosterMember.setEmail(user.getEmail());
+		rosterMember.setDisplayName(user.getDisplayName());
+		rosterMember.setSortName(user.getSortName());
+
+        Collection<Group> groups = site.getGroupsWithMember(userId);
+
+		for (Group group : groups) {
+			rosterMember.addGroup(group.getId(), group.getTitle());
+		}
+
+        if (connectionsLogic != null) {
+            rosterMember.setConnectionStatus(connectionsLogic
+                    .getConnectionStatus(getCurrentUserId(), userId));
+        }
+        return rosterMember;
+    }
+
+	public List<User> getSiteUsers(String siteId) {
+
+		Site site = null;
+		try {
+			site = siteService.getSite(siteId);
+		} catch (IdUnusedException e) {
+			log.error("Site '" + siteId + "' not found. Returning null ...");
+            return null;
+		}
+
+        return userDirectoryService.getUsers(site.getUsers());
+    }
 	
-	private List<RosterMember> getMembership(String siteId, String groupId,
-			boolean includeConnectionStatus) {
+	private List<RosterMember> getMembership(String siteId, String groupId) {
 
         String userId = getCurrentUserId();
 
@@ -276,11 +335,8 @@ public class SakaiProxyImpl implements SakaiProxy {
 		try {
 			site = siteService.getSite(siteId);
 		} catch (IdUnusedException e) {
-			log.warn("site not found: " + e.getId());
-		}
-
-		if (null == site) {
-			return null;
+			log.error("Site '" + siteId + "' not found. Returning null ...");
+            return null;
 		}
 
 		// permissions are handled inside this method call
@@ -296,7 +352,7 @@ public class SakaiProxyImpl implements SakaiProxy {
 			try {
 
 				RosterMember rosterMember = 
-					getRosterMember(userMap, groups, member, site, includeConnectionStatus, userId);
+					getRosterMember(userMap, groups, member, site, userId);
 
 				rosterMembers.add(rosterMember);
 
@@ -310,7 +366,6 @@ public class SakaiProxyImpl implements SakaiProxy {
 		}
 
 		return rosterMembers;
-
 	}
 		
     private Map<String, User> getUserMap(Set<Member> members) {
@@ -370,7 +425,7 @@ public class SakaiProxyImpl implements SakaiProxy {
 
 			try {
 
-				RosterMember rosterMember = getRosterMember(userMap, groups, member, site, false, userId);
+				RosterMember rosterMember = getRosterMember(userMap, groups, member, site, userId);
 
 				rosterMembers.put(rosterMember.getEid(), rosterMember);
 
@@ -530,7 +585,7 @@ public class SakaiProxyImpl implements SakaiProxy {
 	}
 	
 	private RosterMember getRosterMember(Map<String, User> userMap, Collection<Group> groups, Member member, Site site,
-			boolean includeConnectionStatus, String currentUserId) throws UserNotDefinedException {
+			String currentUserId) throws UserNotDefinedException {
 
 		String userId = member.getUserId();
 
@@ -556,9 +611,9 @@ public class SakaiProxyImpl implements SakaiProxy {
 		}
 		}
 
-        if (true == includeConnectionStatus && connectionsLogic != null) {
+        if (connectionsLogic != null) {
             rosterMember.setConnectionStatus(connectionsLogic
-                    .getConnectionStatus(currentUserId, userId));
+                    .getConnectionStatus(getCurrentUserId(), userId));
         }
 
 		return rosterMember;
@@ -834,18 +889,25 @@ public class SakaiProxyImpl implements SakaiProxy {
 	/**
 	 * {@inheritDoc}
 	 */
-    /*
-	public String getSakaiSkin() {
-		String skin = serverConfigurationService.getString("skin.default");
-		String siteSkin = siteService.getSiteSkin(getCurrentSiteId());
-		return siteSkin != null ? siteSkin : (skin != null ? skin : "default");
-	}*/
-	
-	/**
-	 * {@inheritDoc}
-	 */
 	public boolean isSiteMaintainer(String siteId) {
 		return hasUserSitePermission(getCurrentUserId(), SiteService.SECURE_UPDATE_SITE, siteId);
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+    public Cache getMembershipsCache() {
+
+        try {
+            Cache c = memoryService.getCache(SakaiProxy.MEMBERSHIPS_CACHE);
+            if (c == null) {
+                c = memoryService.createCache(SakaiProxy.MEMBERSHIPS_CACHE, new SimpleConfiguration(0));
+            }
+            return c;
+        } catch (Exception e) {
+            log.error("Exception whilst retrieving sortedMemberships cache. Returning null ...", e);
+            return null;
+        }
+    }
 
 }

@@ -129,98 +129,68 @@
             
         if (roster.STATE_OVERVIEW === state) {
 
+            roster.nextPage = 0;
+
             $('#navbar_overview_link > span').addClass('current');
 
             $('#roster_header').html('');
             $('#roster_section_filter').html('');
             $('#roster_search').html('');
-        
-            var overviewCallback = function (members) {
-                
-                    var renderOverview = function (members) {
 
-                            roster.render('overview',
-                                { 'members': members,
-                                    'firstNameLastName': roster.firstNameLastName,
-                                    'viewEmail': roster.viewEmail,
-                                    'viewUserDisplayId': roster.viewUserDisplayId,
-                                    'viewProfile': roster.currentUserPermissions.viewProfile,
-                                    'viewPicture': true,
-                                    'siteGroups': roster.site.siteGroups,
-                                    'viewOfficialPhoto': roster.currentUserPermissions.viewOfficialPhoto,
-                                    'viewConnections': (undefined != window.friendStatus)},
-                                'roster_content');
-
-                            $(document).ready(function () {
-
-                                roster.renderMembers(members, 'roster-members');
-                            });
-                        };
-
-                    renderOverview(members);
-                
-                    $(document).ready(function () {
-                        
-                        roster.readyExportButton(state);
-                        roster.readySearchButton(state);
-                        roster.readySearchField(searchQuery);
-                        roster.readyClearButton(state);
-
-                        var onGroupClicked = function (e) {
-
-                                var groupId = this.id.substring(13);
-
-                                if (groupId === roster.DEFAULT_GROUP_ID) {
-                                    groupId = null;
-                                }
-
-                                roster.getRosterMembership(groupId, false, null, null, null, false, function (members) {
-
-                                    roster.renderMembers(members, 'roster-members');
-
-                                    $(document).ready(function () {
-
-                                        $('.roster-group-link').click(onGroupClicked);
-                                    });
-                                });
-                            };
-
-                        $('.roster-group-link').click(onGroupClicked);
-                            
-                        if (roster.currentUserPermissions.viewOfficialPhoto) {
-
-                            $('#roster_official_picture_button').click(function (e) {
-
-                                roster.getMembers(searchQuery, true, state, true, function (members) {
-
-                                    renderOverview(members);
-                                    roster.setupHideNamesAndSingleColumnButtons(state,searchQuery);
-                                    roster.rosterOfficialPictureMode = true;
-                                });
-                            });
-                
-                            $('#roster_profile_picture_button').click(function (e) {
-
-                                roster.getMembers(searchQuery, true, state, false, function (members) {
-
-                                    renderOverview(members);
-                                    roster.setupHideNamesAndSingleColumnButtons(state,searchQuery);
-                                    roster.rosterOfficialPictureMode = false;
-                                });
-                            });
-                        }
-                        
-                        if(window.frameElement) {
-                            setMainFrameHeight(window.frameElement.id);
-                        }
-                    });
-                };
+            var showOfficialPictures = false;
 
             if ((arg && arg.forceOfficialPicture) || roster.rosterOfficialPictureMode) {
-                roster.getMembers(searchQuery, true, state, true, overviewCallback);
-            } else {
-                roster.getMembers(searchQuery, true, state, false, overviewCallback);
+                showOfficialPictures = true;
             }
+
+            roster.render('overview',
+                { 'siteGroups': roster.site.siteGroups,
+                    'viewOfficialPhoto': roster.currentUserPermissions.viewOfficialPhoto },
+                'roster_content');
+
+            $(document).ready(function () {
+
+                $('#roster-groups-selector').change(function (e) {
+                    roster.handleGroupSelection(this.value, showOfficialPictures);
+                });
+
+                if (roster.currentUserPermissions.viewOfficialPhoto) {
+
+                    $('#roster_official_picture_button').click(function (e) {
+
+                        roster.rosterOfficialPictureMode = true;
+                        roster.setupHideNamesAndSingleColumnButtons(state,searchQuery);
+                        roster.renderMembership({ forceOfficialPicture: true, replace: true });
+                    });
+        
+                    $('#roster_profile_picture_button').click(function (e) {
+
+                        roster.rosterOfficialPictureMode = false;
+                        roster.setupHideNamesAndSingleColumnButtons(state,searchQuery);
+                        roster.renderMembership({ forceOfficialPicture: false, replace: true });
+                    });
+                }
+
+                roster.readyExportButton(state);
+                roster.readySearchButton(state);
+                roster.readySearchField(searchQuery);
+                roster.readyClearButton(state);
+
+                roster.renderMembership({ forceOfficialPicture: showOfficialPictures, replace: false });
+            });
+
+            $(window).on('scroll.roster', function () {
+
+                var wintop = $(window).scrollTop(), docheight = $(document).height(), winheight = $(window).height();
+         
+                if  ((wintop/(docheight-winheight)) > 0.95) {
+                    if ((arg && arg.forceOfficialPicture) || roster.rosterOfficialPictureMode) {
+                        roster.renderMembership({ forceOfficialPicture: true, replace: false });
+                    } else {
+                        roster.renderMembership({ forceOfficialPicture: false, replace: false });
+                    }
+                }
+            });
         } else if (roster.STATE_VIEW_PROFILE === state) {
             
             roster.sakai.getProfileMarkup(arg.userId, function (profileMarkup) {
@@ -342,13 +312,39 @@
         });
     };
 
-    roster.getRosterMembership = function (groupId, sorted, sortField, sortDirection, state, forceOfficialPicture, callback) {
+    roster.renderGroupMembership = function (groupId, showOfficialPictures) {
 
-        var url = "/direct/roster-membership/" + roster.siteId + "/get-membership.json?sorted=" + sorted + "&includeConnectionStatus=true";
-        
-        if (groupId) {
-            url += "&groupId=" + groupId;
+        if (groupId === roster.DEFAULT_GROUP_ID) {
+            groupId = null;
+        } else {
+            $('#roster-members').empty();
         }
+
+        roster.groupToView = groupId;
+
+        roster.renderMembership({ forceOfficialPicture: showOfficialPictures, replace: true });
+    };
+
+    roster.renderMembership = function (options) {
+
+        if (options.replace) {
+            $('#roster-members').empty();
+            roster.nextPage = 0;
+        }
+
+        var url = "/direct/roster-membership/" + roster.siteId;
+        
+        if (options.userId) {
+            url += "/get-user.json?userId=" + options.userId;
+        } else {
+            url += "/get-membership.json?page=" + roster.nextPage;
+            if (roster.groupToView) {
+                url += "&groupId=" + roster.groupToView;
+            }
+        }
+
+        var loadImage = $('#roster-loading-image')
+        loadImage.show();
 
         $.ajax({
             url: url,
@@ -356,22 +352,42 @@
             cache: false,
             success: function (data) {
 
-                var membership = data['roster-membership_collection'];
+                if (data.status && data.status === 'END') {
+                    $(window).off('scroll.roster');
+                    loadImage.hide();
+                    return;
+                }
 
-                membership.forEach(function (m) {
+                var members = data['roster-membership_collection'];
+
+                members.forEach(function (m) {
 
                     m.formattedProfileUrl = "/direct/profile/" + m.userId + "/formatted?siteId=" + roster.siteId;
                     m.profileImageUrl = "/direct/profile/" + m.userId + "/image";
-                    if (forceOfficialPicture) {
+                    if (options.forceOfficialPicture) {
                         m.profileImageUrl += "/official";
                     }
                     m.profileImageUrl += "?siteId=" + roster.siteId;
+                    m.hasGroups = Object.keys(m.groups).length > 0;
                 });
 
-                callback(membership);
+                roster.renderMembers(members, $('#roster-members'));
+
+                $(document).ready(function () {
+
+                    $('.roster-user-groups-selector').off('change').on('change', function (e) {
+                        roster.handleGroupSelection(this.value, forceOfficialPicture);
+                    });
+                });
+
+                roster.nextPage += 1;
+
+                loadImage.hide();
             },
-            error: function () {
-                callback(new Array());
+            error: function (jqXHR, textStatus, errorThrown) {
+
+                console.log('textStatus: ' + textStatus);
+                console.log('errorThrown: ' + errorThrown);
             }
         });
     };
@@ -393,14 +409,6 @@
         });
     };
 
-    roster.getCurrentlyDisplayingParticipants = function (roles) {
-        
-        var participants
-            = roles.reduce(function (prev, el) { return prev + el.count; }, 0);
-        
-        return roster.i18n.currently_displaying_participants.replace(/\{0\}/, participants);
-    };
-
     roster.getCurrentlyDisplayingStudents = function (enrollment, enrollmentType) {
         
         var currentEnrollments = roster.i18n.enrollments_currently_displaying.replace(/\{0\}/,
@@ -416,113 +424,22 @@
         return currentEnrollments;
     };
 
-    roster.getRoleFragments = function (roles) {
-        
-        return roles.map(function (r) {
-
-            var frag = roster.i18n.role_breakdown_fragment.replace(/\{0\}/, r.count);
-            return frag.replace(/\{1\}/, r.roleType);
-        }).join();
-    };
-
-    roster.getRolesUsingRosterMembers = function (members, roleTypes) {
-        
-        var roles
-            = roleTypes.map(function (t) { return {roleType: t, count: 0}; });
-        
-        // Count the members in each role
-        roles.forEach(function (r) {
-
-            members.forEach(function (m) {
-            
-                if (m.role === r.roleType) {
-                    r.count++;
-                }
-            });
-        });
-        
-        // Filter out empty roles
-        return roles.filter(function (r) { return r.count > 0; });
-    };
-
-    roster.addRoleMembershipCountsToGroups = function (groups, members) {
-        
-        return groups.map(function (group) {
-                    
-            group.roles = {};
-
-            members.forEach(function (member) {
-                
-                group.userIds.forEach(function (userId) {
-
-                    if (member.userId === userId) {
-                        
-                        var role = member.role;
-                        
-                        if (undefined === group.roles[role]) {
-                            group.roles[role] = { roleType: role, count: 0 };
-                        }
-
-                        group.roles[role].count += 1;
-                    }
-                });
-            });
-
-            return group;
-        });
-    };
-
-    roster.getRolesByGroupRoleFragments = function (groups, members) {
-
-        var countedGroups = roster.addRoleMembershipCountsToGroups(groups, members);
-        
-        return countedGroups.map(function (group) {
-
-            var roleIds = Object.keys(group.roles);
-            var numberOfRoles = roleIds.length;
-            
-            var participantsCount = 0;
-            var roleNumber = 1;
-
-            roleIds.forEach(function (id) {
-
-                var role = group.roles[id];
-                
-                role.fragment
-                    = roster.i18n.role_breakdown_fragment
-                        .replace(/\{0\}/, role.count)
-                            .replace(/\{1\}/, role.roleType);
-                
-                if (roleNumber != numberOfRoles) {
-                    role.fragment +=  ", ";
-                }
-                                    
-                participantsCount += role.count;
-                
-                roleNumber += 1;
-            });
-            
-            group.participants
-                = roster.i18n.currently_displaying_participants.replace(/\{0\}/, participantsCount);
-
-            return group;
-        });
-    };
-
+    /*
     roster.getMembers = function (searchQuery, sorted, state, forceOfficialPicture, callback) {
 
         if (roster.groupToView) {
             // view a specific group (note: search is done within group if selected)
 
-            roster.getRosterMembership(roster.groupToView, sorted, null, null, state, forceOfficialPicture, function (members) {
+            roster.renderMembership(roster.groupToView, sorted, null, null, state, forceOfficialPicture, function (members) {
                 callback(roster.filter(members, searchQuery));
             });
         } else {
-            roster.getRosterMembership(null, sorted, null, null, state,forceOfficialPicture, function (members) {
+            roster.renderMembership(null, sorted, null, null, state,forceOfficialPicture, function (members) {
                 callback(roster.filter(members, searchQuery));
             });
         }
     };
+    */
 
     roster.getEnrolledMembers = function (searchQuery, callback) {
 
@@ -553,6 +470,7 @@
     roster.readyClearButton = function (state) {
         
         $('#roster_form_clear_button').click(function (e) {
+
             roster.switchState(state);
         });
     };
@@ -620,9 +538,9 @@
             var searchFieldValue = $('#roster_form_search_field').val();
 
             if (searchFieldValue !== roster.i18n.roster_search_text && searchFieldValue !== "") {
-                
                 searchQuery = searchFieldValue.toLowerCase();
-                roster.switchState(state, null, searchQuery);
+                var userId = roster.searchIndex[searchQuery];
+                roster.renderMembership({ forceOfficialPicture: false, replace: true, userId: userId });
             }
         });
     };
@@ -630,7 +548,12 @@
     roster.readySearchField = function () {
 
         var field = $('#roster_form_search_field');
+
+        field.autocomplete({
+            source: roster.searchIndexKeys
+        });
         
+        /*
         field.focus(function (e) {
             if (this.value === roster.i18n.roster_search_text) {
                 this.value = "";
@@ -643,6 +566,7 @@
                 return true;
             }
         });
+        */
     };
 
     roster.readyEnrollmentFilters = function (numberOfEnrollmentSets) {
@@ -762,8 +686,8 @@
 
     roster.renderMembers = function (members, target) {
 
-        roster.render('members',
-            { 'roster.language': roster.language,
+        var templateData = {
+                'roster.language': roster.language,
                 'members': members,
                 'siteId': roster.siteId,
                 'groupToView' :roster.groupToView,
@@ -774,8 +698,16 @@
                 'viewPicture': true,
                 'currentUserId': roster.userId,
                 'viewOfficialPhoto': roster.currentUserPermissions.viewOfficialPhoto,
-                'viewConnections': (undefined != window.friendStatus)},
-            target);
+                'viewConnections': (undefined != window.friendStatus)
+            };
+
+        var t = Handlebars.templates['members'];
+        target.append(t(templateData));
+    };
+
+    roster.handleGroupSelection = function (groupId, showOfficialPictures) {
+
+        roster.renderGroupMembership(groupId, showOfficialPictures);
     };
 
     // Functions and attributes added. All the code from hereon is executed
@@ -836,6 +768,7 @@
 
         return roster.site.permissions[role].indexOf(perm) != -1;
     });
+
 	
     $.ajax({
         url: "/direct/roster-membership/" + roster.siteId + "/get-site.json",
@@ -915,8 +848,17 @@
             window.frameElement.style.minHeight = '600px';
         }
     } catch (err) {}
-		
-	// Now switch into the requested state
-	roster.switchState(roster.state, roster);
 
+    $.ajax({
+        url: '/direct/roster-membership/' + roster.siteId + '/get-search-index.json',
+        dataType: "json",
+        success: function (data) {
+            roster.searchIndex = data.data;
+            roster.searchIndexKeys = Object.keys(data.data);
+            // Now switch into the requested state
+            roster.switchState(roster.state, roster);
+        },
+        error: function () {
+        }
+    });
 }) (jQuery);

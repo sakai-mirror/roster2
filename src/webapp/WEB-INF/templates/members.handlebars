@@ -71,12 +71,17 @@
             {{/if}}
         {{/if}}
         </div> <!-- /rosterActions -->
+        {{#if hasGroups}}
         <div class="roster-user-groups">
-        <span class="roster-groups-title">{{translate 'groups'}}</span>
-        {{#each groups}}
-            <a class="roster-group-link" id="roster-group-{{@key}}">{{this}}</a>
-        {{/each}}
+            <span class="roster-groups-title">{{translate 'groups'}}</span>
+            <select class="roster-user-groups-selector">
+                <option value="all">{{translate 'roster_sections_all'}}</option>
+            {{#each groups}}
+                <option value="{{@key}}">{{this}}</option>
+            {{/each}}
+            </select>
         </div>
+        {{/if}}
     </div> <!-- /roster-info -->
 </div> <!-- /roster-member -->
 <br />

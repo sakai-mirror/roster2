@@ -20,7 +20,9 @@
 package org.sakaiproject.roster.tool.entityprovider;
 
 import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -34,9 +36,11 @@ import org.sakaiproject.entitybroker.entityprovider.capabilities.Outputable;
 import org.sakaiproject.entitybroker.entityprovider.extension.Formats;
 import org.sakaiproject.entitybroker.exception.EntityException;
 import org.sakaiproject.entitybroker.util.AbstractEntityProvider;
+import org.sakaiproject.memory.api.Cache;
 import org.sakaiproject.roster.api.RosterMember;
 import org.sakaiproject.roster.api.RosterMemberComparator;
 import org.sakaiproject.roster.api.SakaiProxy;
+import org.sakaiproject.user.api.User;
 
 import lombok.Setter;
 
@@ -64,16 +68,27 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 	public final static String KEY_SORT_FIELD					= "sortField";
 	public final static String KEY_SORT_DIRECTION				= "sortDirection";
 	public final static String KEY_GROUP_ID						= "groupId";
+	public final static String KEY_USER_ID						= "userId";
+	public final static String KEY_PAGE                         = "page";
 	public final static String KEY_ENROLLMENT_SET_ID			= "enrollmentSetId";
-	public final static String KEY_INCLUDE_CONNECTION_STATUS	= "includeConnectionStatus";
 	
 	// defaults
 	public final static boolean DEFAULT_SORTED			= false;
 	public final static String DEFAULT_SORT_FIELD		= RosterMemberComparator.SORT_NAME;
 	public final static int DEFAULT_SORT_DIRECTION		= RosterMemberComparator.SORT_ASCENDING;
+
+    private RosterMemberComparator memberComparator;
 	
     @Setter
 	private SakaiProxy sakaiProxy;
+
+    public void init() {
+
+        memberComparator
+            = new RosterMemberComparator(RosterMemberComparator.SORT_NAME,
+                                    RosterMemberComparator.SORT_ASCENDING,
+                                    sakaiProxy.getFirstNameLastName());
+    }
 	
 	/**
 	 * {@inheritDoc}
@@ -93,34 +108,112 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 		if (parameters.containsKey(KEY_GROUP_ID)) {
 			groupId = parameters.get(KEY_GROUP_ID).toString();
 		}
-		
-		Boolean includeConnectionStatus = false;
-		if (parameters.containsKey(KEY_INCLUDE_CONNECTION_STATUS)) {
-			includeConnectionStatus = Boolean.valueOf(parameters.get(
-					KEY_INCLUDE_CONNECTION_STATUS).toString());
+
+		int page = 0;
+		if (parameters.containsKey(KEY_PAGE)) {
+            String pageString = parameters.get(KEY_PAGE).toString();
+            try {
+			    page = Integer.parseInt(pageString);
+            } catch (NumberFormatException nfe) {
+                log.error("Invalid page number " + pageString + " supplied. The first page will be returned ...");
+            }
 		}
 
+        String siteId = reference.getId();
+
 		List<RosterMember> membership = null;
+
+        // Try and load the sorted memberships from the cache
+        Cache membershipsCache = sakaiProxy.getMembershipsCache();
+
+        boolean cacheAfterSorting = false;
+        String cacheKey = siteId;
+
 		// if no group ID specified, retrieve site membership, else retrieve group
 		if (null == groupId) {
-			membership = sakaiProxy.getSiteMembership(reference.getId(), includeConnectionStatus);
+            membership = (List<RosterMember>) membershipsCache.get(cacheKey);
+            if (membership == null) {
+                cacheAfterSorting = true;
+			    membership = sakaiProxy.getSiteMembership(siteId);
+            }
 		} else {
-			membership = sakaiProxy.getGroupMembership(reference.getId(), groupId);
+            cacheKey = groupId;
+            membership = (List<RosterMember>) membershipsCache.get(cacheKey);
+            if (membership == null) {
+                cacheAfterSorting = true;
+			    membership = sakaiProxy.getGroupMembership(siteId, groupId);
+            }
 		}
 		
 		if (null == membership) {
 			throw new EntityException("Unable to retrieve membership", reference.getReference());
 		}
 
-		if (true == getSortedValue(parameters)) {
+        // We need to cache this now it has been sorted. Otherwise it is just
+        // a performance killer.
+        if (cacheAfterSorting) {
+            Collections.sort(membership, memberComparator);
 
-			Collections.sort(membership, new RosterMemberComparator(
-					getSortFieldValue(parameters),
-					getSortDirectionValue(parameters), sakaiProxy
-							.getFirstNameLastName()));
+            membershipsCache.put(cacheKey, membership);
+        }
+
+        int pageSize = 20;
+        int start  = page * pageSize;
+        int membershipsSize = membership.size();
+
+        if (log.isDebugEnabled()) {
+            log.debug("start: " + start);
+            log.debug("memberships.size(): " + membershipsSize);
+        }
+
+        if (start >= membershipsSize) {
+            return "{\"status\": \"END\"}";
+        } else {
+            int end = start + pageSize;
+
+            if (log.isDebugEnabled()) {
+                log.debug("end: " + end);
+            }
+
+            if (end >= membershipsSize) {
+                end = membershipsSize;
+            }
+
+		    List<RosterMember> subList = membership.subList(start, end);
+
+		    return subList;
+        }
+	}
+
+    @EntityCustomAction(action = "get-user", viewKey = EntityView.VIEW_SHOW)
+	public Object getUser(EntityReference reference, Map<String, Object> parameters) {
+
+        String siteId = reference.getId();
+
+		if (null == siteId || DEFAULT_ID.equals(siteId)) {
+			throw new EntityException(ERROR_INVALID_SITE, reference.getReference());
 		}
 
-		return membership;
+		String userId = null;
+		if (parameters.containsKey(KEY_USER_ID)) {
+			userId = parameters.get(KEY_USER_ID).toString();
+		}
+
+		if (null == userId) {
+			throw new EntityException("No user id supplied", reference.getReference());
+		}
+
+		List<RosterMember> membership = new ArrayList<RosterMember>();
+
+        RosterMember member = sakaiProxy.getMember(siteId, userId);
+		
+		if (null == member) {
+			throw new EntityException("Unable to retrieve membership", reference.getReference());
+		}
+
+        membership.add(member);
+
+        return membership;
 	}
 			
 	@EntityCustomAction(action = "get-site", viewKey = EntityView.VIEW_SHOW)
@@ -131,6 +224,24 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 		}
 		
 		return sakaiProxy.getRosterSite(reference.getId());
+	}
+
+	@EntityCustomAction(action = "get-search-index", viewKey = EntityView.VIEW_SHOW)
+	public Object getSearchIndex(EntityReference reference) {
+		
+        String siteId = reference.getId();
+
+		if (null == siteId || DEFAULT_ID.equals(siteId)) {
+			throw new EntityException(ERROR_INVALID_SITE, reference.getReference());
+		}
+
+        Map<String, String> index = new HashMap<String, String>();
+
+        for (User user : sakaiProxy.getSiteUsers(siteId)) {
+            index.put(user.getDisplayName(), user.getId());
+        }
+		
+		return index;
 	}
 		
 	@EntityCustomAction(action = "get-enrollment", viewKey = EntityView.VIEW_SHOW)

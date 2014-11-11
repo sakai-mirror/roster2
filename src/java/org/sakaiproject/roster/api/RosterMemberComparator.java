@@ -57,11 +57,9 @@ public class RosterMemberComparator implements Comparator<RosterMember> {
 	 * 
 	 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
 	 */
-	public int compare(RosterMember a, RosterMember b) {
+	public int compare(RosterMember member1, RosterMember member2) {
 
-		RosterMember member1;
-		RosterMember member2;
-
+        /*
 		if (SORT_DESCENDING == sortDirection) {
 			member1 = b;
 			member2 = a;
@@ -71,6 +69,7 @@ public class RosterMemberComparator implements Comparator<RosterMember> {
 			member1 = a;
 			member2 = b;
 		}
+        */
 
 		if (SORT_NAME.equals(sortField)) {
 			if (firstNameLastName) {
@@ -100,5 +99,4 @@ public class RosterMemberComparator implements Comparator<RosterMember> {
 
 		return 0;
 	}
-	
 }

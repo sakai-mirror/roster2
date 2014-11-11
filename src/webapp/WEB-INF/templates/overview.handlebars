@@ -3,17 +3,19 @@
 {{/if}}
 <div class="roster-user-groups">
     <span class="roster-groups-title">{{translate 'groups'}}</span>
-        <a class="roster-group-link" id="roster-group-all">{{translate 'roster_sections_all'}}</a>
+    <select id="roster-groups-selector">
+        <option value="all">{{translate 'roster_sections_all'}}</option>
     {{#each siteGroups}}
-        <a class="roster-group-link" id="roster-group-{{id}}">{{title}}</a>
+        <option value="{{id}}">{{title}}</option>
     {{/each}}
+    </select>
 </div>
 <table id="roster_form:search_group" class="searchFilter">
 	<tbody>
 		<tr>
 			<td>
 				<div id="roster_form:search_filter" class="act">
-					<input id="roster_form_search_field" type="text" value="{{#if searchQuery}}{{searchQuery}}{{else}}{{translate 'roster_search_text'}}{{/if}}" name="roster_form_search" />
+					<input id="roster_form_search_field" type="text" value="{{#if searchQuery}}{{searchQuery}}{{/if}}" name="roster_form_search" />
 					<input id="roster_form_search_button" class="active" type="button" value="{{translate 'roster_search_button'}}" name="roster_form:search_button" />
 					<input id="roster_form_clear_button" type="button" value="{{translate 'roster_clear_button'}}" name="roster_form:clear_button" />
 				</div>
@@ -27,5 +29,7 @@
     <input type="radio" name="roster_picture_type" value="profile" id="roster_profile_picture_button" {{#unless roster.rosterOfficialPictureMode}}checked{{/unless}}/><span>{{translate 'roster_show_profile_pictures'}}</span>
     {{/if}}
 </div>
-<div id="roster-members">
+<div id="roster-members"></div>
+<div id="roster-loading-image">
+<img src="/sakai-roster2-tool/images/ajax-loader.gif" />
 </div>

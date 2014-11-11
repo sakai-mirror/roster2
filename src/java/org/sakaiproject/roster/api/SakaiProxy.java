@@ -21,7 +21,9 @@ package org.sakaiproject.roster.api;
 
 import java.util.List;
 
+import org.sakaiproject.memory.api.Cache;
 import org.sakaiproject.site.api.Site;
+import org.sakaiproject.user.api.User;
 
 /**
  * Roster interface to Sakai functionality.
@@ -32,6 +34,8 @@ public interface SakaiProxy {
 
 	public final static String[] ROSTER_STATES = new String[] { "overview",
 			"pics", "group_membership", "status" };
+
+    public final static String MEMBERSHIPS_CACHE = "org.sakaiproject.roster.sortedMembershipsCache";
 
 	public final static String DEFAULT_SORT_COLUMN = "sortName";
 	public final static Boolean DEFAULT_FIRST_NAME_LAST_NAME = false;
@@ -133,13 +137,9 @@ public interface SakaiProxy {
 	 * Returns the list of viewable members from the specified site.
 	 * 
 	 * @param siteId the ID of the site.
-	 * @param includeConnectionStatus specify <code>true</code> if
-	 *            <code>RosterMember</code> objects should be populated with the
-	 *            Profile2 connection statuses to the current user, else specify
-	 *            <code>false</code>.
 	 * @return the list of viewable members from the specified site.
 	 */
-	public List<RosterMember> getSiteMembership(String siteId, boolean includeConnectionStatus);
+	public List<RosterMember> getSiteMembership(String siteId);
 	
 	/**
 	 * Returns the list of viewable members from the specified group.
@@ -149,6 +149,10 @@ public interface SakaiProxy {
 	 * @return the list of viewable members from the specified group.
 	 */
 	public List<RosterMember> getGroupMembership(String siteId, String groupId);
+
+	public RosterMember getMember(String siteId, String userId);
+
+	public List<User> getSiteUsers(String siteId);
 	
 	/**
 	 * Returns site information for the specified site.
@@ -214,4 +218,12 @@ public interface SakaiProxy {
 	 * Checks if the user has site.upd in the given site
 	 */
 	public boolean isSiteMaintainer(String siteId);
+
+	/**
+	 * Attempts to retrieve the memberships cache. If the cache doesn't exist
+     * it is created and returned.
+     *
+     * @return Either the existing Cache, or a new, empty one.
+	 */
+    public Cache getMembershipsCache();
 }
