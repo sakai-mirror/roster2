@@ -22,6 +22,8 @@ package org.sakaiproject.roster.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -682,38 +684,36 @@ public class SakaiProxyImpl implements SakaiProxy {
 
 		String currentUserId = getCurrentUserId();
 		if (null == currentUserId) {
-			if(log.isDebugEnabled()) log.debug("No currentUserId. Returning null");
+			log.debug("No currentUserId. Returning null ...");
 			return null;
 		}
 		
-		if(log.isDebugEnabled()) log.debug("currentUserId: " + currentUserId);
-
+		if (log.isDebugEnabled()) log.debug("currentUserId: " + currentUserId);
 
 		Site site = getSite(siteId);
 		if (null == site) {
-			if(log.isDebugEnabled()) log.debug("No site. Returning null");
+			log.debug("No site. Returning null ...");
 			return null;
 		}
 		
-		if(log.isDebugEnabled()) log.debug("site: " + site.getId());
+		if (log.isDebugEnabled()) log.debug("site: " + site.getId());
 		
-		if(log.isDebugEnabled()) log.debug("Checking permissions for site: " +  site.getReference());
+		if (log.isDebugEnabled()) log.debug("Checking permissions for site: " +  site.getReference());
 		// for DelegatedAccess to work, you must use the SecurityService.unlock method of checking permissions.
-		if(!isAllowed(currentUserId, RosterFunctions.ROSTER_FUNCTION_VIEWALL, site.getReference())) {
-			if(log.isDebugEnabled()) log.debug("roster.viewallmembers = false");
+		if (!isAllowed(currentUserId, RosterFunctions.ROSTER_FUNCTION_VIEWALL, site.getReference())) {
+			log.debug("roster.viewallmembers = false");
 
-			if(!isAllowed(currentUserId, RosterFunctions.ROSTER_FUNCTION_VIEWGROUP, site.getReference())) {
-				if(log.isDebugEnabled()) log.debug("roster.viewgroup = false");
+			if (!isAllowed(currentUserId, RosterFunctions.ROSTER_FUNCTION_VIEWGROUP, site.getReference())) {
+				log.debug("roster.viewgroup = false");
 				return null;
 			} else {
-				if(log.isDebugEnabled()) log.debug("roster.viewgroup = true. Access ok.");
+				log.debug("roster.viewgroup = true. Access ok.");
 			}
 		} else {
-			if(log.isDebugEnabled()) log.debug("roster.viewallmembers = true. Access ok.");
+			log.debug("roster.viewallmembers = true. Access ok.");
 		}
-
 		
-		RosterSite rosterSite = new RosterSite(site.getId());
+		RosterSite rosterSite = new RosterSite(siteId);
 
 		rosterSite.setTitle(site.getTitle());
 
@@ -769,12 +769,41 @@ public class SakaiProxyImpl implements SakaiProxy {
 
 	private List<RosterGroup> getViewableSiteGroups(String currentUserId,
 			Site site) {
+
 		List<RosterGroup> siteGroups = new ArrayList<RosterGroup>();
 
 		boolean viewAll = isAllowed(currentUserId,
 				RosterFunctions.ROSTER_FUNCTION_VIEWALL, site);
 
-		for (Group group : site.getGroups()) {
+		Collection<Group> groupsCollection = site.getGroups();
+
+        Group[] groups = new Group[groupsCollection.size()];
+
+        groups = groupsCollection.toArray(groups);
+
+        // TODO: change this to BaseGroup's comparator when KNL-1305 has been
+        // fixed.
+        Arrays.sort(groups, new Comparator<Group>() {
+
+                public int compare(final Group lhs, final Group rhs) {
+
+                    // If the groups are the same, say so
+                    if (lhs == rhs) return 0;
+
+                    // start the compare by comparing their title
+                    int compare = lhs.getTitle().compareTo(rhs.getTitle());
+
+                    // if these are the same
+                    if (compare == 0) {
+                        // sort based on (unique) id
+                        compare = lhs.getId().compareTo(rhs.getId());
+                    }
+
+                    return compare;
+                }
+            });
+
+		for (Group group : groups) {
 
 			if (viewAll
 					|| isAllowed(currentUserId,
@@ -910,4 +939,20 @@ public class SakaiProxyImpl implements SakaiProxy {
         }
     }
 
+	/**
+	 * {@inheritDoc}
+	 */
+    public Cache getSearchIndexCache() {
+
+        try {
+            Cache c = memoryService.getCache(SakaiProxy.SEARCH_INDEX_CACHE);
+            if (c == null) {
+                c = memoryService.createCache(SakaiProxy.SEARCH_INDEX_CACHE, new SimpleConfiguration(0));
+            }
+            return c;
+        } catch (Exception e) {
+            log.error("Exception whilst retrieving search index cache. Returning null ...", e);
+            return null;
+        }
+    }
 }

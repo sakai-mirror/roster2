@@ -36,6 +36,7 @@ public interface SakaiProxy {
 			"pics", "group_membership", "status" };
 
     public final static String MEMBERSHIPS_CACHE = "org.sakaiproject.roster.sortedMembershipsCache";
+    public final static String SEARCH_INDEX_CACHE = "org.sakaiproject.roster.searchIndexCache";
 
 	public final static String DEFAULT_SORT_COLUMN = "sortName";
 	public final static Boolean DEFAULT_FIRST_NAME_LAST_NAME = false;
@@ -226,4 +227,12 @@ public interface SakaiProxy {
      * @return Either the existing Cache, or a new, empty one.
 	 */
     public Cache getMembershipsCache();
+
+	/**
+	 * Attempts to retrieve the search index cache. If the cache doesn't exist
+     * it is created and returned.
+     *
+     * @return Either the existing Cache, or a new, empty one.
+	 */
+    public Cache getSearchIndexCache();
 }

@@ -235,10 +235,18 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 			throw new EntityException(ERROR_INVALID_SITE, reference.getReference());
 		}
 
-        Map<String, String> index = new HashMap<String, String>();
+        // Try and load the sorted memberships from the cache
+        Cache searchIndexCache = sakaiProxy.getSearchIndexCache();
 
-        for (User user : sakaiProxy.getSiteUsers(siteId)) {
-            index.put(user.getDisplayName(), user.getId());
+        Map<String, String> index
+            = (Map<String, String>) searchIndexCache.get(siteId);
+
+        if (index == null) {
+            index = new HashMap<String, String>();
+            for (User user : sakaiProxy.getSiteUsers(siteId)) {
+                index.put(user.getDisplayName(), user.getId());
+            }
+            searchIndexCache.put(siteId, index);
         }
 		
 		return index;
