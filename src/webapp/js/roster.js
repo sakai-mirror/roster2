@@ -124,6 +124,7 @@
         if (roster.STATE_OVERVIEW === state) {
 
             roster.enrollmentSetToView = null;
+            roster.groupToView = null;
 
             $('#navbar_overview_link > span').addClass('current');
 
@@ -144,7 +145,7 @@
 
             $(document).ready(function () {
 
-                $('#roster-groups-selector').change(function (e) {
+                $('#roster-groups-selector-top').change(function (e) {
 
                     if (this.value === 'all') {
                         roster.groupToView = null;
@@ -430,8 +431,13 @@
 
                 $(document).ready(function () {
 
-                    $('.roster-user-groups-selector').off('change').on('change', function (e) {
-                        roster.handleGroupSelection(this.value, forceOfficialPicture);
+                    $('.roster-groups-selector').off('change').on('change', function (e) {
+
+                        var value = this.value;
+
+                        roster.handleGroupSelection(this.value, options.forceOfficialPicture);
+
+                        $('#roster-group-option-' + value).prop('selected', true);
                     });
                 });
 

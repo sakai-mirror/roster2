@@ -3,10 +3,10 @@
 {{/if}}
 <div class="roster-user-groups">
     <span class="roster-groups-title">{{translate 'groups'}}</span>
-    <select id="roster-groups-selector">
+    <select id="roster-groups-selector-top">
         <option value="all">{{translate 'roster_sections_all'}}</option>
     {{#each siteGroups}}
-        <option value="{{id}}">{{title}}</option>
+        <option id="roster-group-option-{{id}}" value="{{id}}">{{title}}</option>
     {{/each}}
     </select>
 </div>

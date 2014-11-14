@@ -176,9 +176,12 @@ table.rosterPicturesSingleColumn td {
     color: #900;
 }
 
+#roster-members {
+    display: inline-block;
+}
+
 .roster-member {
     overflow: hidden;
-    display: inline-block;
     border: 1px solid #ccc;
     border-width: 1px;
     -moz-border-radius: 5px;

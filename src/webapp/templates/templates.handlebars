@@ -446,8 +446,8 @@ templates['members'] = template({"1":function(depth0,helpers,partials,data,depth
 },"14":function(depth0,helpers,partials,data) {
   var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "            <div class=\"roster-table-row\">\n                <div class=\"roster-table-cell\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "groups", {"name":"translate","hash":{},"data":data})))
-    + "</div>\n                <div class=\"roster-table-cell\">\n                    <select class=\"roster-user-groups-selector\">\n                        <option value=\"all\">"
-    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "roster_sections_all", {"name":"translate","hash":{},"data":data})))
+    + "</div>\n                <div class=\"roster-table-cell\">\n                    <select class=\"roster-groups-selector\">\n                        <option value=\"all\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "pick_group_instruction", {"name":"translate","hash":{},"data":data})))
     + "</option>\n";
   stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.groups : depth0), {"name":"each","hash":{},"fn":this.program(15, data),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
@@ -579,7 +579,9 @@ templates['overview'] = template({"1":function(depth0,helpers,partials,data) {
     + "</span>\n";
 },"3":function(depth0,helpers,partials,data) {
   var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
-  return "        <option value=\""
+  return "        <option id=\"roster-group-option-"
+    + escapeExpression(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"id","hash":{},"data":data}) : helper)))
+    + "\" value=\""
     + escapeExpression(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"id","hash":{},"data":data}) : helper)))
     + "\">"
     + escapeExpression(((helper = (helper = helpers.title || (depth0 != null ? depth0.title : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"title","hash":{},"data":data}) : helper)))
@@ -607,7 +609,7 @@ templates['overview'] = template({"1":function(depth0,helpers,partials,data) {
   if (stack1 != null) { buffer += stack1; }
   buffer += "<div class=\"roster-user-groups\">\n    <span class=\"roster-groups-title\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "groups", {"name":"translate","hash":{},"data":data})))
-    + "</span>\n    <select id=\"roster-groups-selector\">\n        <option value=\"all\">"
+    + "</span>\n    <select id=\"roster-groups-selector-top\">\n        <option value=\"all\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "roster_sections_all", {"name":"translate","hash":{},"data":data})))
     + "</option>\n";
   stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.siteGroups : depth0), {"name":"each","hash":{},"fn":this.program(3, data),"inverse":this.noop,"data":data});
