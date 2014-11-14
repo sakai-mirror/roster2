@@ -150,13 +150,6 @@
                     if (this.value === 'all') {
                         roster.groupToView = null;
                         roster.renderMembership({ forceOfficialPicture: showOfficialPictures, replace: true });
-                        $(document).ready( function () {
-
-                            $(window).on('scroll.roster', function (e) {
-
-                                roster.scrollFunction(showOfficialPictures);
-                            });
-                        });
                     } else {
                         roster.handleGroupSelection(this.value, showOfficialPictures);
                     }
@@ -167,14 +160,12 @@
                     $('#roster_official_picture_button').click(function (e) {
 
                         roster.rosterOfficialPictureMode = true;
-                        roster.setupHideNamesAndSingleColumnButtons(state,searchQuery);
                         roster.renderMembership({ forceOfficialPicture: true, replace: true });
                     });
         
                     $('#roster_profile_picture_button').click(function (e) {
 
                         roster.rosterOfficialPictureMode = false;
-                        roster.setupHideNamesAndSingleColumnButtons(state,searchQuery);
                         roster.renderMembership({ forceOfficialPicture: false, replace: true });
                     });
                 }
@@ -187,7 +178,7 @@
                 roster.renderMembership({ forceOfficialPicture: showOfficialPictures, replace: false });
             });
 
-            $(window).on('scroll.roster', function (e) {
+            $(window).off('scroll.roster').on('scroll.roster', function (e) {
 
                 roster.scrollFunction(showOfficialPictures);
             });
@@ -229,13 +220,15 @@
 
                 $('#roster-enrollmentset-selector').change(function (e) {
 
-                    alert(this.value);
+                    var option = this.options[this.selectedIndex];
+                    roster.enrollmentSetToView = option.value;
+                    roster.enrollmentSetToViewText = option.text;
+                    roster.renderMembership({ forceOfficialPicture: showOfficialPictures, replace: true, enrollmentsMode: true });
+                });
 
-                    /*
-                    roster.enrollmentSetToView = this.options[this.selectedIndex].value;
-                    roster.enrollmentSetToViewText = this.options[this.selectedIndex].text;
-                    roster.switchState(roster.STATE_ENROLLMENT_STATUS);
-                    */
+                $('#roster-status-selector').change(function (e) {
+
+                    //var clazz = '.roster-status-' + this.options[this.selectedIndex].text;
                 });
 
                 if (roster.currentUserPermissions.viewOfficialPhoto) {
@@ -243,15 +236,13 @@
                     $('#roster_official_picture_button').click(function (e) {
 
                         roster.rosterOfficialPictureMode = true;
-                        roster.setupHideNamesAndSingleColumnButtons(state,searchQuery);
-                        roster.renderMembership({ forceOfficialPicture: true, replace: true });
+                        roster.renderMembership({ forceOfficialPicture: true, replace: true, enrollmentsMode: true });
                     });
         
                     $('#roster_profile_picture_button').click(function (e) {
 
                         roster.rosterOfficialPictureMode = false;
-                        roster.setupHideNamesAndSingleColumnButtons(state,searchQuery);
-                        roster.renderMembership({ forceOfficialPicture: false, replace: true });
+                        roster.renderMembership({ forceOfficialPicture: false, replace: true, enrollmentsMode: true });
                     });
                 }
 
@@ -260,63 +251,8 @@
                 roster.readySearchField(searchQuery);
                 roster.readyClearButton(state);
 
-                roster.renderMembership({ forceOfficialPicture: showOfficialPictures, replace: false, enrollmentsMode: true });
+                roster.renderMembership({ forceOfficialPicture: showOfficialPictures, replace: true, enrollmentsMode: true });
             });
-
-            /*
-            roster.render('enrollment_section_filter',
-                    { enrollmentSets: roster.site.siteEnrollmentSets,
-                    onlyOne: roster.site.siteEnrollmentSets.length == 1,
-                    enrollmentStatusDescriptions: roster.site.enrollmentStatusDescriptions },
-                    'roster_section_filter');
-                    */
-            
-            /*
-            roster.getEnrolledMembers(searchQuery, function (enrollment) {
-                    
-                roster.render('search_with_students',
-                        { 'students': roster.getCurrentlyDisplayingStudents(enrollment, null) },
-                        'roster_search');
-
-                enrollment.forEach(function (e) {
-
-                    e.canViewEnrollment
-                        = roster.enrollmentStatusToViewText === roster.i18n.roster_enrollment_status_all
-                            || e.enrollmentStatus === roster.enrollmentStatusToViewText;
-                });
-                
-                roster.render('enrollment_status',
-                        { 'language': roster.language,
-                            'enrollment': enrollment,
-                            'siteId': roster.siteId,
-                            'firstNameLastName': roster.firstNameLastName,
-                            'viewEmail': roster.viewEmail,
-                            'viewProfile': roster.currentUserPermissions.viewProfile }, 'roster_content');
-                        
-                $(document).ready(function () {
-                    
-                    roster.readyExportButton(state);
-                    roster.readyEnrollmentFilters(roster.site.siteEnrollmentSets.length);
-                    
-                    roster.readySearchButton(state);
-                    roster.readySearchField();
-                    roster.readyClearButton(state);
-
-                    var enrollmentSortParams = roster.getEnrollmentStatusTableSort();
-                    
-                    $('#roster_form_rosterTable').tablesorter(enrollmentSortParams);
-                    
-                    $('#roster_form_rosterTable').bind("sortEnd",function () {
-                        roster.currentSortColumn = this.config.sortList[0][0];
-                        roster.currentSortDirection = this.config.sortList[0][1];
-                    });
-
-                    if(window.frameElement) {
-                        setMainFrameHeight(window.frameElement.id);
-                    }
-                });
-            });
-            */
         } else if (roster.STATE_PERMISSIONS === state) {
 
             $('#navbar_permissions_link > span').addClass('current');
@@ -351,21 +287,6 @@
         }
     };
 
-    roster.setupHideNamesAndSingleColumnButtons = function (state, searchQuery) {
-
-        roster.readyHideNamesButton(state, searchQuery);
-        $('#roster_form_pics_view').click(function (e) {
-            
-            if (roster.viewSingleColumn) {
-                roster.viewSingleColumn = false;
-            } else {
-                roster.viewSingleColumn = true;
-            }
-            
-            roster.switchState(state, null, searchQuery);
-        });
-    };
-
     roster.renderGroupMembership = function (groupId, showOfficialPictures) {
 
         if (groupId === roster.DEFAULT_GROUP_ID) {
@@ -384,6 +305,11 @@
         if (options.replace) {
             $('#roster-members').empty();
             roster.nextPage = 0;
+
+            $(window).off('scroll.roster').on('scroll.roster', function (e) {
+
+                roster.scrollFunction(options.forceOfficialPicture, options.enrollmentsMode);
+            });
         }
 
         var url = "/direct/roster-membership/" + roster.siteId;
@@ -451,81 +377,6 @@
                 console.log('errorThrown: ' + errorThrown);
             }
         });
-    };
-
-    roster.getRosterEnrollment = function (callback) {
-        
-        var url = "/direct/roster-membership/" + roster.siteId + "/get-enrollment.json?enrollmentSetId=" + roster.enrollmentSetToView;
-        
-        $.ajax({
-            url: url,
-            dataType: "json",
-            cache: false,
-            success: function (data) {
-                callback(data['roster-membership_collection']);
-            },
-            error: function () {
-                callback(new Array());
-            }
-        });
-    };
-
-    roster.getCurrentlyDisplayingStudents = function (enrollment, enrollmentType) {
-        
-        var currentEnrollments = roster.i18n.enrollments_currently_displaying.replace(/\{0\}/,
-                enrollment.length);
-        
-        if (enrollmentType) {
-            currentEnrollments = currentEnrollments.replace(/\{1\}/, enrollmentType);
-        } else {
-            // do all needs no string		
-            currentEnrollments = currentEnrollments.replace(/\{1\}/, '');
-        }
-        
-        return currentEnrollments;
-    };
-
-    /*
-    roster.getMembers = function (searchQuery, sorted, state, forceOfficialPicture, callback) {
-
-        if (roster.groupToView) {
-            // view a specific group (note: search is done within group if selected)
-
-            roster.renderMembership(roster.groupToView, sorted, null, null, state, forceOfficialPicture, function (members) {
-                callback(roster.filter(members, searchQuery));
-            });
-        } else {
-            roster.renderMembership(null, sorted, null, null, state,forceOfficialPicture, function (members) {
-                callback(roster.filter(members, searchQuery));
-            });
-        }
-    };
-    */
-
-    roster.getEnrolledMembers = function (searchQuery, callback) {
-
-        // TODO pass enrollment status required?
-
-        roster.getRosterEnrollment( function (enrollment) {
-            callback(roster.filter(enrollment, searchQuery));
-        });
-    };
-
-    roster.filter = function (members, searchQuery) {
-        
-        if (searchQuery) {
-            return members.filter(function (m) {
-                                
-                if (m.displayName.toLowerCase().indexOf(searchQuery) >= 0 ||
-                        m.displayId.toLowerCase().indexOf(searchQuery) >= 0) {
-                    return true;
-                } else {
-                    return false;
-                }
-            });
-        } else {
-            return members;
-        }
     };
 
     roster.readyClearButton = function (state) {
@@ -626,28 +477,14 @@
             });
         }
         
-        $('#roster_form_enrollment_status_filter').val(roster.enrollmentStatusToViewText);
-        $('#roster_form_enrollment_status_filter').change(function (e) {
+        $('#roster-status-selector')
+            .val(roster.enrollmentStatusToViewText)
+            .change(function (e) {
             
-            roster.enrollmentStatusToViewText = this.options[this.selectedIndex].text;
-                    
-            roster.switchState(roster.STATE_ENROLLMENT_STATUS);
-        });
+                roster.enrollmentStatusToViewText = this.options[this.selectedIndex].text;
+                roster.switchState(roster.STATE_ENROLLMENT_STATUS);
+            });
         
-    };
-
-    roster.readyHideNamesButton = function (state, searchQuery) {
-
-        $('#roster_form_hide_names').click(function (e) {
-            
-            if (roster.hideNames) {
-                roster.hideNames = false;
-            } else {
-                roster.hideNames = true;
-            }
-            
-            roster.switchState(state, null, searchQuery);
-        });
     };
 
     roster.getEnrollmentStatusTableSort = function () {
@@ -756,15 +593,15 @@
         roster.renderGroupMembership(groupId, showOfficialPictures);
     };
 
-    roster.scrollFunction = function (showOfficialPictures) {
+    roster.scrollFunction = function (showOfficialPictures, enrollmentsMode) {
 
         var wintop = $(window).scrollTop(), docheight = $(document).height(), winheight = $(window).height();
  
         if  ((wintop/(docheight-winheight)) > 0.95) {
             if (showOfficialPictures) {
-                roster.renderMembership({ forceOfficialPicture: true, replace: false });
+                roster.renderMembership({ forceOfficialPicture: true, replace: false, enrollmentsMode: enrollmentsMode});
             } else {
-                roster.renderMembership({ forceOfficialPicture: false, replace: false });
+                roster.renderMembership({ forceOfficialPicture: false, replace: false, enrollmentsMode: enrollmentsMode });
             }
         }
     };

@@ -631,8 +631,6 @@ public class SakaiProxyImpl implements SakaiProxy {
 	 */
 	public List<RosterMember> getEnrollmentMembership(String siteId, String enrollmentSetId) {
 
-        System.out.println("Enrollment Set ID: " + enrollmentSetId);
-
 		Site site = null;
 		try {
 			site = siteService.getSite(siteId);
@@ -688,6 +686,8 @@ public class SakaiProxyImpl implements SakaiProxy {
                 // to avoid IndexOutOfBoundsException in EB code
                 return null;
             }
+
+            Collections.sort(enrolledMembers, memberComparator);
 
             // Cache them
             membersMap.put(enrollmentSetId, enrolledMembers);

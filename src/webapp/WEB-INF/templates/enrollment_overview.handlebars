@@ -1,13 +1,29 @@
 {{#if displayTitleMsg}}
 	<span class="instruction rosterTitleMessage">{{translate 'title_msg'}}</span>
 {{/if}}
-<span class="filterElement">
-    <select id="roster-enrollmentset-selector">
-        {{#each enrollmentSets}}
-            <option value="{{this}}">{{title}}</option>
-        {{/each}}
-    </select>
-</span>
+    <div class="roster-table">
+        <div class="roster-table-row">
+            <div class="roster-table-cell">{{translate 'enrollment_set_filter_label'}}</div>
+            <div class="roster-table-cell">
+                <select id="roster-enrollmentset-selector">
+                    {{#each enrollmentSets}}
+                        <option value="{{id}}">{{title}}</option>
+                    {{/each}}
+                </select>
+            </div>
+        </div>
+        <div class="roster-table-row">
+            <div class="roster-table-cell">{{translate 'enrollment_status_filter_label'}}</div>
+            <div class="roster-table-cell">
+                <select id="roster-status-selector">
+                    <option selected="selected" value="">{{translate 'roster_enrollment_status_all'}}</option>
+                    {{#each enrollmentStatusDescriptions}}
+                        <option value="{{thisenrollmentStatusDescription}}">{{this}}</option>
+                    {{/each}}
+                </select>
+            </div>
+        </div>
+    </div>
 <table id="roster_form:search_group" class="searchFilter">
 	<tbody>
 		<tr>
