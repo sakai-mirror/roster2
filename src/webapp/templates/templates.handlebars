@@ -12,6 +12,54 @@ templates['enrollment_header'] = template({"compiler":[6,">= 2.0.0-beta.1"],"mai
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "print_roster", {"name":"translate","hash":{},"data":data})))
     + "\" onclick=\"window.print()\" />\n			</td>\n		</tr>\n	</tbody>\n</table>\n";
 },"useData":true});
+templates['enrollment_overview'] = template({"1":function(depth0,helpers,partials,data) {
+  var helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
+  return "	<span class=\"instruction rosterTitleMessage\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "title_msg", {"name":"translate","hash":{},"data":data})))
+    + "</span>\n";
+},"3":function(depth0,helpers,partials,data) {
+  var helper, lambda=this.lambda, escapeExpression=this.escapeExpression, functionType="function", helperMissing=helpers.helperMissing;
+  return "            <option value=\""
+    + escapeExpression(lambda(depth0, depth0))
+    + "\">"
+    + escapeExpression(((helper = (helper = helpers.title || (depth0 != null ? depth0.title : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"title","hash":{},"data":data}) : helper)))
+    + "</option>\n";
+},"5":function(depth0,helpers,partials,data) {
+  var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
+  return escapeExpression(((helper = (helper = helpers.searchQuery || (depth0 != null ? depth0.searchQuery : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"searchQuery","hash":{},"data":data}) : helper)));
+  },"7":function(depth0,helpers,partials,data) {
+  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "    <input type=\"radio\" name=\"roster_picture_type\" value=\"official\" id=\"roster_official_picture_button\" ";
+  stack1 = helpers['if'].call(depth0, ((stack1 = (depth0 != null ? depth0.roster : depth0)) != null ? stack1.rosterOfficialPictureMode : stack1), {"name":"if","hash":{},"fn":this.program(8, data),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  buffer += "/><span>"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "roster_show_official_pictures", {"name":"translate","hash":{},"data":data})))
+    + "</span>\n    <input type=\"radio\" name=\"roster_picture_type\" value=\"profile\" id=\"roster_profile_picture_button\" ";
+  stack1 = helpers.unless.call(depth0, ((stack1 = (depth0 != null ? depth0.roster : depth0)) != null ? stack1.rosterOfficialPictureMode : stack1), {"name":"unless","hash":{},"fn":this.program(8, data),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + "/><span>"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "roster_show_profile_pictures", {"name":"translate","hash":{},"data":data})))
+    + "</span>\n";
+},"8":function(depth0,helpers,partials,data) {
+  return "checked";
+  },"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
+  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "";
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.displayTitleMsg : depth0), {"name":"if","hash":{},"fn":this.program(1, data),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  buffer += "<span class=\"filterElement\">\n    <select id=\"roster-enrollmentset-selector\">\n";
+  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.enrollmentSets : depth0), {"name":"each","hash":{},"fn":this.program(3, data),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  buffer += "    </select>\n</span>\n<table id=\"roster_form:search_group\" class=\"searchFilter\">\n	<tbody>\n		<tr>\n			<td>\n				<div id=\"roster_form:search_filter\" class=\"act\">\n					<input id=\"roster_form_search_field\" type=\"text\" value=\"";
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.searchQuery : depth0), {"name":"if","hash":{},"fn":this.program(5, data),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  buffer += "\" name=\"roster_form_search\" />\n					<input id=\"roster_form_search_button\" class=\"active\" type=\"button\" value=\""
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "roster_search_button", {"name":"translate","hash":{},"data":data})))
+    + "\" name=\"roster_form:search_button\" />\n					<input id=\"roster_form_clear_button\" type=\"button\" value=\""
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "roster_clear_button", {"name":"translate","hash":{},"data":data})))
+    + "\" name=\"roster_form:clear_button\" />\n				</div>\n			</td>\n		</tr>\n	</tbody>\n</table>\n<div id=\"roster_type_selector\">\n";
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.viewOfficialPhoto : depth0), {"name":"if","hash":{},"fn":this.program(7, data),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + "</div>\n<div id=\"roster-members\"></div>\n<div id=\"roster-loading-image\">\n<img src=\"/sakai-roster2-tool/images/ajax-loader.gif\" />\n</div>\n";
+},"useData":true});
 templates['enrollment_section_filter'] = template({"1":function(depth0,helpers,partials,data) {
   var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "	<tbody>\n		<tr>\n			<td><span class=\"filterLabel\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "enrollment_status_filter", {"name":"translate","hash":{},"data":data})))
@@ -155,25 +203,30 @@ templates['enrollment_status'] = template({"1":function(depth0,helpers,partials,
   if (stack1 != null) { buffer += stack1; }
   return buffer + "	</tbody>\n</table>\n";
 },"useData":true,"useDepths":true});
-templates['members'] = template({"1":function(depth0,helpers,partials,data,depths) {
-  var stack1, buffer = "<div class=\"roster-member\">\n";
+templates['enrollments'] = template({"1":function(depth0,helpers,partials,data,depths) {
+  var stack1, helper, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, functionType="function", buffer = "<div class=\"roster-member\">\n";
   stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewPicture : depths[1]), {"name":"if","hash":{},"fn":this.program(2, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  buffer += "\n    <div class=\"roster-info\">\n\n";
+  buffer += "\n    <div class=\"roster-info\">\n\n        <div class=\"roster-table\">\n";
   stack1 = helpers.unless.call(depth0, (depths[1] != null ? depths[1].hideNames : depths[1]), {"name":"unless","hash":{},"fn":this.program(7, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  buffer += "\n";
-  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewUserDisplayId : depths[1]), {"name":"if","hash":{},"fn":this.program(9, data, depths),"inverse":this.noop,"data":data});
+  buffer += "\n            <div class=\"roster-table-row\">\n";
+  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewUserDisplayId : depths[1]), {"name":"if","hash":{},"fn":this.program(12, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  buffer += "\n        <div class=\"rosterActions\">\n";
-  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewEmail : depths[1]), {"name":"if","hash":{},"fn":this.program(11, data, depths),"inverse":this.noop,"data":data});
+  buffer += "            </div>\n\n            <div class=\"roster-table-row\">\n                <div class=\"roster-table-cell\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "facet_status", {"name":"translate","hash":{},"data":data})))
+    + "</div>\n                <div class=\"roster-table-cell\"><b>"
+    + escapeExpression(((helper = (helper = helpers.enrollmentStatus || (depth0 != null ? depth0.enrollmentStatus : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"enrollmentStatus","hash":{},"data":data}) : helper)))
+    + "</b></div>\n            </div>\n            <div class=\"roster-table-row\">\n                <div class=\"roster-table-cell\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "facet_credits", {"name":"translate","hash":{},"data":data})))
+    + "</div>\n                <div class=\"roster-table-cell\"><b>"
+    + escapeExpression(((helper = (helper = helpers.credits || (depth0 != null ? depth0.credits : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"credits","hash":{},"data":data}) : helper)))
+    + "</b></div>\n            </div>\n        </div> <!-- /roster-table-->\n\n        <div class=\"rosterActions\">\n";
+  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewEmail : depths[1]), {"name":"if","hash":{},"fn":this.program(14, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewConnections : depths[1]), {"name":"if","hash":{},"fn":this.program(14, data, depths),"inverse":this.noop,"data":data});
+  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewConnections : depths[1]), {"name":"if","hash":{},"fn":this.program(17, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  buffer += "        </div> <!-- /rosterActions -->\n";
-  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.hasGroups : depth0), {"name":"if","hash":{},"fn":this.program(26, data, depths),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + "    </div> <!-- /roster-info -->\n</div> <!-- /roster-member -->\n<br />\n";
+  return buffer + "        </div> <!-- /rosterActions -->\n    </div> <!-- /roster-info -->\n</div> <!-- /roster-member -->\n<br />\n";
 },"2":function(depth0,helpers,partials,data,depths) {
   var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "        <div class=\"roster-picture\">\n";
   stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewProfile : depths[1]), {"name":"if","hash":{},"fn":this.program(3, data, depths),"inverse":this.noop,"data":data});
@@ -196,33 +249,44 @@ templates['members'] = template({"1":function(depth0,helpers,partials,data,depth
 },"5":function(depth0,helpers,partials,data) {
   return "            </a>\n";
   },"7":function(depth0,helpers,partials,data,depths) {
-  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "        <div>\n";
-  stack1 = helpers['if'].call(depth0, (depths[2] != null ? depths[2].viewProfile : depths[2]), {"name":"if","hash":{},"fn":this.program(3, data, depths),"inverse":this.noop,"data":data});
+  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "            <div class=\"roster-table-row\">\n                <div class=\"roster-table-cell\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "facet_name", {"name":"translate","hash":{},"data":data})))
+    + "</div>\n                <div class=\"roster-table-cell\">\n";
+  stack1 = helpers['if'].call(depth0, (depths[2] != null ? depths[2].viewProfile : depths[2]), {"name":"if","hash":{},"fn":this.program(8, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  buffer += "        <span title=\""
+  buffer += "                    <span title=\""
     + escapeExpression(((helpers.getName || (depth0 && depth0.getName) || helperMissing).call(depth0, (depth0 != null ? depth0.firstNameLastName : depth0), {"name":"getName","hash":{},"data":data})))
     + "\">"
     + escapeExpression(((helpers.getName || (depth0 && depth0.getName) || helperMissing).call(depth0, (depth0 != null ? depth0.firstNameLastName : depth0), {"name":"getName","hash":{},"data":data})))
     + "</span>\n";
-  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewProfile : depths[1]), {"name":"if","hash":{},"fn":this.program(5, data, depths),"inverse":this.noop,"data":data});
+  stack1 = helpers['if'].call(depth0, (depths[2] != null ? depths[2].viewProfile : depths[2]), {"name":"if","hash":{},"fn":this.program(10, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  return buffer + "        </div>\n";
-},"9":function(depth0,helpers,partials,data,depths) {
-  var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "        <div>\n";
-  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewProfile : depths[1]), {"name":"if","hash":{},"fn":this.program(3, data, depths),"inverse":this.noop,"data":data});
+  return buffer + "                </div>\n            </div>\n";
+},"8":function(depth0,helpers,partials,data) {
+  var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
+  return "                    <a href=\"javascript:;\" class=\"profile\" rel=\""
+    + escapeExpression(((helper = (helper = helpers.formattedProfileUrl || (depth0 != null ? depth0.formattedProfileUrl : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"formattedProfileUrl","hash":{},"data":data}) : helper)))
+    + "\">\n";
+},"10":function(depth0,helpers,partials,data) {
+  return "                    </a>\n";
+  },"12":function(depth0,helpers,partials,data,depths) {
+  var stack1, helper, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, functionType="function", buffer = "                <div class=\"roster-table-cell\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "facet_userId", {"name":"translate","hash":{},"data":data})))
+    + "</div>\n                <div class=\"roster-table-cell\">\n";
+  stack1 = helpers['if'].call(depth0, (depths[2] != null ? depths[2].viewProfile : depths[2]), {"name":"if","hash":{},"fn":this.program(8, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  buffer += "        "
+  buffer += "                    "
     + escapeExpression(((helper = (helper = helpers.displayId || (depth0 != null ? depth0.displayId : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"displayId","hash":{},"data":data}) : helper)))
     + "\n";
-  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewProfile : depths[1]), {"name":"if","hash":{},"fn":this.program(5, data, depths),"inverse":this.noop,"data":data});
+  stack1 = helpers['if'].call(depth0, (depths[2] != null ? depths[2].viewProfile : depths[2]), {"name":"if","hash":{},"fn":this.program(10, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  return buffer + "        </div>\n";
-},"11":function(depth0,helpers,partials,data) {
+  return buffer + "                </div>\n";
+},"14":function(depth0,helpers,partials,data) {
   var stack1, buffer = "";
-  stack1 = helpers['if'].call(depth0, ((stack1 = (depth0 != null ? depth0.email : depth0)) != null ? stack1.length : stack1), {"name":"if","hash":{},"fn":this.program(12, data),"inverse":this.noop,"data":data});
+  stack1 = helpers['if'].call(depth0, ((stack1 = (depth0 != null ? depth0.email : depth0)) != null ? stack1.length : stack1), {"name":"if","hash":{},"fn":this.program(15, data),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   return buffer;
-},"12":function(depth0,helpers,partials,data) {
+},"15":function(depth0,helpers,partials,data) {
   var helper, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, functionType="function";
   return "                <div><span class=\"icon connection-email\" alt=\""
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_email", {"name":"translate","hash":{},"data":data})))
@@ -237,28 +301,28 @@ templates['members'] = template({"1":function(depth0,helpers,partials,data,depth
     + "\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_email", {"name":"translate","hash":{},"data":data})))
     + "</a></div>\n";
-},"14":function(depth0,helpers,partials,data,depths) {
+},"17":function(depth0,helpers,partials,data,depths) {
   var stack1, helperMissing=helpers.helperMissing, buffer = "";
-  stack1 = helpers['if'].call(depth0, ((helpers.isMe || (depth0 && depth0.isMe) || helperMissing).call(depth0, (depths[1] != null ? depths[1].currentUserId : depths[1]), {"name":"isMe","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(15, data, depths),"inverse":this.program(17, data, depths),"data":data});
+  stack1 = helpers['if'].call(depth0, ((helpers.isMe || (depth0 && depth0.isMe) || helperMissing).call(depth0, (depths[1] != null ? depths[1].currentUserId : depths[1]), {"name":"isMe","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(18, data, depths),"inverse":this.program(20, data, depths),"data":data});
   if (stack1 != null) { buffer += stack1; }
   return buffer;
-},"15":function(depth0,helpers,partials,data) {
+},"18":function(depth0,helpers,partials,data) {
   var helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
   return "                <span class=\"icon connection-self\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_connection_self", {"name":"translate","hash":{},"data":data})))
     + "</span>\n";
-},"17":function(depth0,helpers,partials,data,depths) {
+},"20":function(depth0,helpers,partials,data,depths) {
   var stack1, helperMissing=helpers.helperMissing, buffer = "";
-  stack1 = helpers['if'].call(depth0, ((helpers.unconnected || (depth0 && depth0.unconnected) || helperMissing).call(depth0, {"name":"unconnected","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(18, data, depths),"inverse":this.noop,"data":data});
+  stack1 = helpers['if'].call(depth0, ((helpers.unconnected || (depth0 && depth0.unconnected) || helperMissing).call(depth0, {"name":"unconnected","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(21, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  stack1 = helpers['if'].call(depth0, ((helpers.confirmed || (depth0 && depth0.confirmed) || helperMissing).call(depth0, {"name":"confirmed","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(20, data, depths),"inverse":this.noop,"data":data});
+  stack1 = helpers['if'].call(depth0, ((helpers.confirmed || (depth0 && depth0.confirmed) || helperMissing).call(depth0, {"name":"confirmed","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(23, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  stack1 = helpers['if'].call(depth0, ((helpers.requested || (depth0 && depth0.requested) || helperMissing).call(depth0, {"name":"requested","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(22, data, depths),"inverse":this.noop,"data":data});
+  stack1 = helpers['if'].call(depth0, ((helpers.requested || (depth0 && depth0.requested) || helperMissing).call(depth0, {"name":"requested","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(25, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  stack1 = helpers['if'].call(depth0, ((helpers.incoming || (depth0 && depth0.incoming) || helperMissing).call(depth0, {"name":"incoming","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(24, data, depths),"inverse":this.noop,"data":data});
+  stack1 = helpers['if'].call(depth0, ((helpers.incoming || (depth0 && depth0.incoming) || helperMissing).call(depth0, {"name":"incoming","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(27, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   return buffer;
-},"18":function(depth0,helpers,partials,data,depths) {
+},"21":function(depth0,helpers,partials,data,depths) {
   var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, lambda=this.lambda;
   return "                    <span id=\""
     + escapeExpression(((helper = (helper = helpers.profileDiv || (depth0 != null ? depth0.profileDiv : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"profileDiv","hash":{},"data":data}) : helper)))
@@ -269,7 +333,7 @@ templates['members'] = template({"1":function(depth0,helpers,partials,data,depth
     + "')\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_connection_add", {"name":"translate","hash":{},"data":data})))
     + "</a>\n                    </span>\n";
-},"20":function(depth0,helpers,partials,data,depths) {
+},"23":function(depth0,helpers,partials,data,depths) {
   var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, lambda=this.lambda;
   return "                    <span id=\""
     + escapeExpression(((helper = (helper = helpers.profileDiv || (depth0 != null ? depth0.profileDiv : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"profileDiv","hash":{},"data":data}) : helper)))
@@ -280,12 +344,12 @@ templates['members'] = template({"1":function(depth0,helpers,partials,data,depth
     + "')\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_connection_remove", {"name":"translate","hash":{},"data":data})))
     + "</a>\n                    </span>\n";
-},"22":function(depth0,helpers,partials,data) {
+},"25":function(depth0,helpers,partials,data) {
   var helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
   return "                    <span class=\"icon connection-request\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_connection_requested", {"name":"translate","hash":{},"data":data})))
     + "</span>\n";
-},"24":function(depth0,helpers,partials,data,depths) {
+},"27":function(depth0,helpers,partials,data,depths) {
   var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, lambda=this.lambda;
   return "                    <span id=\""
     + escapeExpression(((helper = (helper = helpers.profileDiv || (depth0 != null ? depth0.profileDiv : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"profileDiv","hash":{},"data":data}) : helper)))
@@ -300,22 +364,184 @@ templates['members'] = template({"1":function(depth0,helpers,partials,data,depth
     + "')\"><img src=\"/library/image/silk/cancel.png\"></a>\n                        <span class=\"rosterActionAlignment\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_connection_accept", {"name":"translate","hash":{},"data":data})))
     + "</span>\n                    </span>\n";
-},"26":function(depth0,helpers,partials,data) {
-  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "        <div class=\"roster-user-groups\">\n            <span class=\"roster-groups-title\">"
+},"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data,depths) {
+  var stack1, buffer = "";
+  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.members : depth0), {"name":"each","hash":{},"fn":this.program(1, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer;
+},"useData":true,"useDepths":true});
+templates['members'] = template({"1":function(depth0,helpers,partials,data,depths) {
+  var stack1, buffer = "<div class=\"roster-member\">\n";
+  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewPicture : depths[1]), {"name":"if","hash":{},"fn":this.program(2, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  buffer += "\n    <div class=\"roster-info\">\n\n        <div class=\"roster-table\">\n";
+  stack1 = helpers.unless.call(depth0, (depths[1] != null ? depths[1].hideNames : depths[1]), {"name":"unless","hash":{},"fn":this.program(7, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  buffer += "\n            <div class=\"roster-table-row\">\n";
+  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewUserDisplayId : depths[1]), {"name":"if","hash":{},"fn":this.program(12, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  buffer += "            </div>\n\n";
+  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.hasGroups : depth0), {"name":"if","hash":{},"fn":this.program(14, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  buffer += "        </div>\n\n        <div class=\"rosterActions\">\n";
+  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewEmail : depths[1]), {"name":"if","hash":{},"fn":this.program(17, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewConnections : depths[1]), {"name":"if","hash":{},"fn":this.program(20, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + "        </div> <!-- /rosterActions -->\n    </div> <!-- /roster-info -->\n</div> <!-- /roster-member -->\n<br />\n";
+},"2":function(depth0,helpers,partials,data,depths) {
+  var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "        <div class=\"roster-picture\">\n";
+  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewProfile : depths[1]), {"name":"if","hash":{},"fn":this.program(3, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  buffer += "        <img class=\"rosterPicture\" src=\""
+    + escapeExpression(((helper = (helper = helpers.profileImageUrl || (depth0 != null ? depth0.profileImageUrl : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"profileImageUrl","hash":{},"data":data}) : helper)))
+    + "\" title=\""
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_picture_alt", {"name":"translate","hash":{},"data":data})))
+    + " "
+    + escapeExpression(((helper = (helper = helpers.displayName || (depth0 != null ? depth0.displayName : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"displayName","hash":{},"data":data}) : helper)))
+    + "\" />\n";
+  stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewProfile : depths[1]), {"name":"if","hash":{},"fn":this.program(5, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + "        </div> <!-- /roster-picture -->\n";
+},"3":function(depth0,helpers,partials,data) {
+  var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
+  return "            <a href=\"javascript:;\" class=\"profile\" rel=\""
+    + escapeExpression(((helper = (helper = helpers.formattedProfileUrl || (depth0 != null ? depth0.formattedProfileUrl : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"formattedProfileUrl","hash":{},"data":data}) : helper)))
+    + "\">\n";
+},"5":function(depth0,helpers,partials,data) {
+  return "            </a>\n";
+  },"7":function(depth0,helpers,partials,data,depths) {
+  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "            <div class=\"roster-table-row\">\n                <div class=\"roster-table-cell\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "facet_name", {"name":"translate","hash":{},"data":data})))
+    + "</div>\n                <div class=\"roster-table-cell\">\n";
+  stack1 = helpers['if'].call(depth0, (depths[2] != null ? depths[2].viewProfile : depths[2]), {"name":"if","hash":{},"fn":this.program(8, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  buffer += "                    <span title=\""
+    + escapeExpression(((helpers.getName || (depth0 && depth0.getName) || helperMissing).call(depth0, (depth0 != null ? depth0.firstNameLastName : depth0), {"name":"getName","hash":{},"data":data})))
+    + "\">"
+    + escapeExpression(((helpers.getName || (depth0 && depth0.getName) || helperMissing).call(depth0, (depth0 != null ? depth0.firstNameLastName : depth0), {"name":"getName","hash":{},"data":data})))
+    + "</span>\n";
+  stack1 = helpers['if'].call(depth0, (depths[2] != null ? depths[2].viewProfile : depths[2]), {"name":"if","hash":{},"fn":this.program(10, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + "                </div>\n            </div>\n";
+},"8":function(depth0,helpers,partials,data) {
+  var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
+  return "                    <a href=\"javascript:;\" class=\"profile\" rel=\""
+    + escapeExpression(((helper = (helper = helpers.formattedProfileUrl || (depth0 != null ? depth0.formattedProfileUrl : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"formattedProfileUrl","hash":{},"data":data}) : helper)))
+    + "\">\n";
+},"10":function(depth0,helpers,partials,data) {
+  return "                    </a>\n";
+  },"12":function(depth0,helpers,partials,data,depths) {
+  var stack1, helper, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, functionType="function", buffer = "                <div class=\"roster-table-cell\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "facet_userId", {"name":"translate","hash":{},"data":data})))
+    + "</div>\n                <div class=\"roster-table-cell\">\n";
+  stack1 = helpers['if'].call(depth0, (depths[2] != null ? depths[2].viewProfile : depths[2]), {"name":"if","hash":{},"fn":this.program(8, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  buffer += "                    "
+    + escapeExpression(((helper = (helper = helpers.displayId || (depth0 != null ? depth0.displayId : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"displayId","hash":{},"data":data}) : helper)))
+    + "\n";
+  stack1 = helpers['if'].call(depth0, (depths[2] != null ? depths[2].viewProfile : depths[2]), {"name":"if","hash":{},"fn":this.program(10, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer + "                </div>\n";
+},"14":function(depth0,helpers,partials,data) {
+  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "            <div class=\"roster-table-row\">\n                <div class=\"roster-table-cell\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "groups", {"name":"translate","hash":{},"data":data})))
-    + "</span>\n            <select class=\"roster-user-groups-selector\">\n                <option value=\"all\">"
+    + "</div>\n                <div class=\"roster-table-cell\">\n                    <select class=\"roster-user-groups-selector\">\n                        <option value=\"all\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "roster_sections_all", {"name":"translate","hash":{},"data":data})))
     + "</option>\n";
-  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.groups : depth0), {"name":"each","hash":{},"fn":this.program(27, data),"inverse":this.noop,"data":data});
+  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.groups : depth0), {"name":"each","hash":{},"fn":this.program(15, data),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  return buffer + "            </select>\n        </div>\n";
-},"27":function(depth0,helpers,partials,data) {
+  return buffer + "                    </select>\n                </div>\n            </div>\n";
+},"15":function(depth0,helpers,partials,data) {
   var lambda=this.lambda, escapeExpression=this.escapeExpression;
-  return "                <option value=\""
+  return "                        <option value=\""
     + escapeExpression(lambda((data && data.key), depth0))
     + "\">"
     + escapeExpression(lambda(depth0, depth0))
     + "</option>\n";
+},"17":function(depth0,helpers,partials,data) {
+  var stack1, buffer = "";
+  stack1 = helpers['if'].call(depth0, ((stack1 = (depth0 != null ? depth0.email : depth0)) != null ? stack1.length : stack1), {"name":"if","hash":{},"fn":this.program(18, data),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer;
+},"18":function(depth0,helpers,partials,data) {
+  var helper, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, functionType="function";
+  return "                <div><span class=\"icon connection-email\" alt=\""
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_email", {"name":"translate","hash":{},"data":data})))
+    + " "
+    + escapeExpression(((helper = (helper = helpers.email || (depth0 != null ? depth0.email : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"email","hash":{},"data":data}) : helper)))
+    + "\"><a href=\"mailto:"
+    + escapeExpression(((helper = (helper = helpers.email || (depth0 != null ? depth0.email : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"email","hash":{},"data":data}) : helper)))
+    + "\" title=\""
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_email", {"name":"translate","hash":{},"data":data})))
+    + " "
+    + escapeExpression(((helper = (helper = helpers.email || (depth0 != null ? depth0.email : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"email","hash":{},"data":data}) : helper)))
+    + "\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_email", {"name":"translate","hash":{},"data":data})))
+    + "</a></div>\n";
+},"20":function(depth0,helpers,partials,data,depths) {
+  var stack1, helperMissing=helpers.helperMissing, buffer = "";
+  stack1 = helpers['if'].call(depth0, ((helpers.isMe || (depth0 && depth0.isMe) || helperMissing).call(depth0, (depths[1] != null ? depths[1].currentUserId : depths[1]), {"name":"isMe","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(21, data, depths),"inverse":this.program(23, data, depths),"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer;
+},"21":function(depth0,helpers,partials,data) {
+  var helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
+  return "                <span class=\"icon connection-self\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_connection_self", {"name":"translate","hash":{},"data":data})))
+    + "</span>\n";
+},"23":function(depth0,helpers,partials,data,depths) {
+  var stack1, helperMissing=helpers.helperMissing, buffer = "";
+  stack1 = helpers['if'].call(depth0, ((helpers.unconnected || (depth0 && depth0.unconnected) || helperMissing).call(depth0, {"name":"unconnected","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(24, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  stack1 = helpers['if'].call(depth0, ((helpers.confirmed || (depth0 && depth0.confirmed) || helperMissing).call(depth0, {"name":"confirmed","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(26, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  stack1 = helpers['if'].call(depth0, ((helpers.requested || (depth0 && depth0.requested) || helperMissing).call(depth0, {"name":"requested","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(28, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  stack1 = helpers['if'].call(depth0, ((helpers.incoming || (depth0 && depth0.incoming) || helperMissing).call(depth0, {"name":"incoming","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(30, data, depths),"inverse":this.noop,"data":data});
+  if (stack1 != null) { buffer += stack1; }
+  return buffer;
+},"24":function(depth0,helpers,partials,data,depths) {
+  var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, lambda=this.lambda;
+  return "                    <span id=\""
+    + escapeExpression(((helper = (helper = helpers.profileDiv || (depth0 != null ? depth0.profileDiv : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"profileDiv","hash":{},"data":data}) : helper)))
+    + "\" class=\"icon connection-add\">\n                        <a href=\"javascript:;\" onclick=\"return requestFriend('"
+    + escapeExpression(lambda((depths[1] != null ? depths[1].currentUserId : depths[1]), depth0))
+    + "','"
+    + escapeExpression(((helper = (helper = helpers.userId || (depth0 != null ? depth0.userId : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"userId","hash":{},"data":data}) : helper)))
+    + "')\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_connection_add", {"name":"translate","hash":{},"data":data})))
+    + "</a>\n                    </span>\n";
+},"26":function(depth0,helpers,partials,data,depths) {
+  var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, lambda=this.lambda;
+  return "                    <span id=\""
+    + escapeExpression(((helper = (helper = helpers.profileDiv || (depth0 != null ? depth0.profileDiv : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"profileDiv","hash":{},"data":data}) : helper)))
+    + "\" class=\"icon connection-confirmed\">\n                        <a href=\"javascript:;\" onclick=\"return removeFriend('"
+    + escapeExpression(lambda((depths[1] != null ? depths[1].currentUserId : depths[1]), depth0))
+    + "','"
+    + escapeExpression(((helper = (helper = helpers.userId || (depth0 != null ? depth0.userId : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"userId","hash":{},"data":data}) : helper)))
+    + "')\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_connection_remove", {"name":"translate","hash":{},"data":data})))
+    + "</a>\n                    </span>\n";
+},"28":function(depth0,helpers,partials,data) {
+  var helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
+  return "                    <span class=\"icon connection-request\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_connection_requested", {"name":"translate","hash":{},"data":data})))
+    + "</span>\n";
+},"30":function(depth0,helpers,partials,data,depths) {
+  var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, lambda=this.lambda;
+  return "                    <span id=\""
+    + escapeExpression(((helper = (helper = helpers.profileDiv || (depth0 != null ? depth0.profileDiv : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"profileDiv","hash":{},"data":data}) : helper)))
+    + "\">\n                        <a href=\"javascript:;\" onclick=\"return confirmFriendRequest('"
+    + escapeExpression(lambda((depths[1] != null ? depths[1].currentUserId : depths[1]), depth0))
+    + "','"
+    + escapeExpression(((helper = (helper = helpers.userId || (depth0 != null ? depth0.userId : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"userId","hash":{},"data":data}) : helper)))
+    + "')\"><img src=\"/library/image/silk/accept.png\"></a>\n                        <a href=\"javascript:;\" onclick=\"return ignoreFriendRequest('"
+    + escapeExpression(lambda((depths[1] != null ? depths[1].currentUserId : depths[1]), depth0))
+    + "','"
+    + escapeExpression(((helper = (helper = helpers.userId || (depth0 != null ? depth0.userId : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"userId","hash":{},"data":data}) : helper)))
+    + "')\"><img src=\"/library/image/silk/cancel.png\"></a>\n                        <span class=\"rosterActionAlignment\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "profile_connection_accept", {"name":"translate","hash":{},"data":data})))
+    + "</span>\n                    </span>\n";
 },"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data,depths) {
   var stack1, buffer = "";
   stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.members : depth0), {"name":"each","hash":{},"fn":this.program(1, data, depths),"inverse":this.noop,"data":data});

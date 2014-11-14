@@ -55,6 +55,7 @@ import org.sakaiproject.roster.api.RosterEnrollment;
 import org.sakaiproject.roster.api.RosterFunctions;
 import org.sakaiproject.roster.api.RosterGroup;
 import org.sakaiproject.roster.api.RosterMember;
+import org.sakaiproject.roster.api.RosterMemberComparator;
 import org.sakaiproject.roster.api.RosterSite;
 import org.sakaiproject.roster.api.SakaiProxy;
 import org.sakaiproject.site.api.Group;
@@ -92,6 +93,7 @@ public class SakaiProxyImpl implements SakaiProxy {
 	private SiteService siteService;
 	private ToolManager toolManager;
 	private UserDirectoryService userDirectoryService;
+    private RosterMemberComparator memberComparator;
 	
 	public void init() {
 		
@@ -128,6 +130,11 @@ public class SakaiProxyImpl implements SakaiProxy {
         if (!registered.contains(RosterFunctions.ROSTER_FUNCTION_VIEWOFFICIALPHOTO)) {
             functionManager.registerFunction(RosterFunctions.ROSTER_FUNCTION_VIEWOFFICIALPHOTO, true);
         }
+
+        memberComparator
+            = new RosterMemberComparator(RosterMemberComparator.SORT_NAME,
+                                    RosterMemberComparator.SORT_ASCENDING,
+                                    getFirstNameLastName());
 	}
 	
 	/**
@@ -257,20 +264,6 @@ public class SakaiProxyImpl implements SakaiProxy {
 				"roster.display.userDisplayId", DEFAULT_VIEW_USER_DISPLAY_ID);
 	}
 	
-	/**
-	 * {@inheritDoc}
-	 */
-	public List<RosterMember> getSiteMembership(String siteId) {
-		return getMembership(siteId, null);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public List<RosterMember> getGroupMembership(String siteId, String groupId) {
-		return getMembership(siteId, groupId);
-	}
-
 	public RosterMember getMember(String siteId, String userId) {
 
         User user = null;
@@ -327,11 +320,9 @@ public class SakaiProxyImpl implements SakaiProxy {
         return userDirectoryService.getUsers(site.getUsers());
     }
 	
-	private List<RosterMember> getMembership(String siteId, String groupId) {
+	public List<RosterMember> getMembership(String siteId, String groupId, String enrollmentSetId) {
 
         String userId = getCurrentUserId();
-
-		List<RosterMember> rosterMembers = new ArrayList<RosterMember>();
 
 		Site site = null;
 		try {
@@ -341,53 +332,74 @@ public class SakaiProxyImpl implements SakaiProxy {
             return null;
 		}
 
-		// permissions are handled inside this method call
-		Set<Member> membership = getFilteredMembers(groupId, userId, site);
-		if (null == membership) {
-			return null;
-		}
+        if (site.isType("course") && enrollmentSetId != null) {
+            return getEnrollmentMembership(siteId, enrollmentSetId);
+        } else {
+            Cache cache = getCache(MEMBERSHIPS_CACHE);
 
-		Map<String, User> userMap = getUserMap(membership);
-		Collection<Group> groups = site.getGroups();
-		for (Member member : membership) {
+            List<RosterMember> rosterMembers = null;
 
-			try {
+            String cacheKey = (groupId != null) ? groupId : siteId;
 
-				RosterMember rosterMember = 
-					getRosterMember(userMap, groups, member, site, userId);
+            rosterMembers = (List<RosterMember>) cache.get(cacheKey);
 
-				rosterMembers.add(rosterMember);
+            if (rosterMembers == null) {
+                // Cache miss
 
-			} catch (UserNotDefinedException e) {
-				log.warn("user not found: " + e.getId());
-			}
-		}
+                // permissions are handled inside this method call
+                Set<Member> membership = getFilteredMembers(groupId, userId, site);
+                if (null == membership) {
+                    return null;
+                }
 
-		if (rosterMembers.size() == 0) {
-			return null;
-		}
+                rosterMembers = new ArrayList<RosterMember>();
 
-		return rosterMembers;
+                Map<String, User> userMap = getUserMap(membership);
+                Collection<Group> groups = site.getGroups();
+                for (Member member : membership) {
+                    try {
+                        RosterMember rosterMember = 
+                            getRosterMember(userMap, groups, member, site, userId);
+
+                        rosterMembers.add(rosterMember);
+                    } catch (UserNotDefinedException e) {
+                        log.warn("user not found: " + e.getId());
+                    }
+                }
+
+                if (rosterMembers.size() == 0) {
+                    return null;
+                }
+
+                // Sort it
+                Collections.sort(rosterMembers, memberComparator);
+
+                // Cache it
+                cache.put(cacheKey, rosterMembers);
+            }
+
+            return rosterMembers;
+        }
 	}
 		
     private Map<String, User> getUserMap(Set<Member> members) {
+
         Map<String, User> userMap = new HashMap<String, User>();
+
         Set<String> userIds = new HashSet<String>();
+
         // Build a map of userId to role
-        for(Iterator<Member> iter = members.iterator(); iter.hasNext();)
-        {
-            Member member = iter.next();
+        for (Member member : members) {
             if (member.isActive()) {
 				userIds.add(member.getUserId());
 	        }
         }
+
         // Get the user objects
-        List<User> users = userDirectoryService.getUsers(userIds);
-        for (Iterator<User> iter = users.iterator(); iter.hasNext();)
-        {
-            User user = iter.next();
+        for (User user : userDirectoryService.getUsers(userIds)) {
             userMap.put(user.getId(), user);
         }
+
         return userMap;
     }
 		
@@ -424,13 +436,9 @@ public class SakaiProxyImpl implements SakaiProxy {
 		Map<String, User> userMap = getUserMap(membership);
 		Collection<Group> groups = site.getGroups();
 		for (Member member : membership) {
-
 			try {
-
 				RosterMember rosterMember = getRosterMember(userMap, groups, member, site, userId);
-
 				rosterMembers.put(rosterMember.getEid(), rosterMember);
-
 			} catch (UserNotDefinedException e) {
 				log.warn("user not found: " + e.getId());
 			}
@@ -439,8 +447,7 @@ public class SakaiProxyImpl implements SakaiProxy {
 		return rosterMembers;
 	}
 
-	private Set<Member> getFilteredMembers(String groupId,
-			String currentUserId, Site site) {
+	private Set<Member> getFilteredMembers(String groupId, String currentUserId, Site site) {
 
 		Set<Member> membership = new HashSet<Member>();
 
@@ -592,7 +599,7 @@ public class SakaiProxyImpl implements SakaiProxy {
 		String userId = member.getUserId();
 
 		User user = userMap.get(userId);
-		if (user==null) {
+		if (user == null) {
 			throw new UserNotDefinedException(userId);
 		}
 
@@ -605,12 +612,10 @@ public class SakaiProxyImpl implements SakaiProxy {
 		rosterMember.setDisplayName(user.getDisplayName());
 		rosterMember.setSortName(user.getSortName());
 
-		for (Group group : groups)
-		{
-			if (group.getMember(userId)!=null)
-			{
-			rosterMember.addGroup(group.getId(), group.getTitle());
-		}
+		for (Group group : groups) {
+			if (group.getMember(userId) != null) {
+			    rosterMember.addGroup(group.getId(), group.getTitle());
+		    }
 		}
 
         if (connectionsLogic != null) {
@@ -624,8 +629,9 @@ public class SakaiProxyImpl implements SakaiProxy {
 	/**
 	 * {@inheritDoc}
 	 */
-	public List<RosterMember> getEnrollmentMembership(String siteId,
-			String enrollmentSetId) {
+	public List<RosterMember> getEnrollmentMembership(String siteId, String enrollmentSetId) {
+
+        System.out.println("Enrollment Set ID: " + enrollmentSetId);
 
 		Site site = null;
 		try {
@@ -644,36 +650,49 @@ public class SakaiProxyImpl implements SakaiProxy {
 			return null;
 		}
 
-		EnrollmentSet enrollmentSet = courseManagementService
-				.getEnrollmentSet(enrollmentSetId);
+        Cache cache = getCache(ENROLLMENTS_CACHE);
 
-		if (null == enrollmentSet) {
-			return null;
-		}
+        Map<String, List<RosterMember>> membersMap = (Map<String, List<RosterMember>>) cache.get(siteId);
 
-		Map<String, String> statusCodes = courseManagementService
-				.getEnrollmentStatusDescriptions(new ResourceLoader()
-						.getLocale());
+        if (membersMap == null) {
+            cache.put(siteId, new HashMap<String, List<RosterMember>>());
+        }
 
-		Map<String, RosterMember> membership = getMembershipMapped(siteId,
-				null, false);
+        List<RosterMember> enrolledMembers = membersMap.get(enrollmentSetId);
 
-		List<RosterMember> enrolledMembers = new ArrayList<RosterMember>();
+        if (enrolledMembers == null) {
 
-		for (Enrollment enrollment : courseManagementService
-				.getEnrollments(enrollmentSet.getEid())) {
+            // Not in the cache yet.
 
-			RosterMember member = membership.get(enrollment.getUserId());
-			member.setCredits(enrollment.getCredits());
-			member.setEnrollmentStatus(statusCodes.get(enrollment.getEnrollmentStatus()));
+		    EnrollmentSet enrollmentSet = courseManagementService.getEnrollmentSet(enrollmentSetId);
 
-			enrolledMembers.add(member);
-		}
+		    if (null == enrollmentSet) {
+			    return null;
+		    }
 
-		if (0 == enrolledMembers.size()) {
-			// to avoid IndexOutOfBoundsException in EB code
-			return null;
-		}
+		    Map<String, String> statusCodes = courseManagementService.getEnrollmentStatusDescriptions(new ResourceLoader().getLocale());
+
+		    Map<String, RosterMember> membership = getMembershipMapped(siteId, null, false);
+
+		    enrolledMembers = new ArrayList<RosterMember>();
+
+		    for (Enrollment enrollment : courseManagementService.getEnrollments(enrollmentSet.getEid())) {
+			    RosterMember member = membership.get(enrollment.getUserId());
+			    member.setCredits(enrollment.getCredits());
+			    member.setEnrollmentStatus(statusCodes.get(enrollment.getEnrollmentStatus()));
+
+			    enrolledMembers.add(member);
+		    }
+
+            if (0 == enrolledMembers.size()) {
+                // to avoid IndexOutOfBoundsException in EB code
+                return null;
+            }
+
+            // Cache them
+            membersMap.put(enrollmentSetId, enrolledMembers);
+        }
+
 		return enrolledMembers;
 	}
 	
@@ -925,16 +944,16 @@ public class SakaiProxyImpl implements SakaiProxy {
 	/**
 	 * {@inheritDoc}
 	 */
-    public Cache getMembershipsCache() {
+    private Cache getCache(String cache) {
 
         try {
-            Cache c = memoryService.getCache(SakaiProxy.MEMBERSHIPS_CACHE);
+            Cache c = memoryService.getCache(cache);
             if (c == null) {
-                c = memoryService.createCache(SakaiProxy.MEMBERSHIPS_CACHE, new SimpleConfiguration(0));
+                c = memoryService.createCache(cache, new SimpleConfiguration(0));
             }
             return c;
         } catch (Exception e) {
-            log.error("Exception whilst retrieving sortedMemberships cache. Returning null ...", e);
+            log.error("Exception whilst retrieving '" + cache + "' cache. Returning null ...", e);
             return null;
         }
     }
@@ -942,16 +961,30 @@ public class SakaiProxyImpl implements SakaiProxy {
 	/**
 	 * {@inheritDoc}
 	 */
-    public Cache getSearchIndexCache() {
+    public Map<String, String> getSearchIndex(String siteId) {
 
         try {
-            Cache c = memoryService.getCache(SakaiProxy.SEARCH_INDEX_CACHE);
-            if (c == null) {
-                c = memoryService.createCache(SakaiProxy.SEARCH_INDEX_CACHE, new SimpleConfiguration(0));
+            // Try and load the sorted memberships from the cache
+            Cache cache = memoryService.getCache(SEARCH_INDEX_CACHE);
+
+            if (cache == null) {
+                cache = memoryService.createCache(SEARCH_INDEX_CACHE, new SimpleConfiguration(0));
             }
-            return c;
+
+            Map<String, String> index
+                = (Map<String, String>) cache.get(siteId);
+
+            if (index == null) {
+                index = new HashMap<String, String>();
+                for (User user : getSiteUsers(siteId)) {
+                    index.put(user.getDisplayName(), user.getId());
+                }
+                cache.put(siteId, index);
+            }
+		
+		    return index;
         } catch (Exception e) {
-            log.error("Exception whilst retrieving search index cache. Returning null ...", e);
+            log.error("Exception whilst retrieving search index for site '" + siteId + "'. Returning null ...", e);
             return null;
         }
     }

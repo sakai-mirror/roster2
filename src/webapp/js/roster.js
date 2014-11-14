@@ -77,15 +77,9 @@
     roster.currentSortColumn = 0;
     roster.currentSortDirection = 0;
 
-    // tablesorter parser for URLs
-    $.tablesorter.addParser({
-        id: 'urls',
-        is: function (s) { return false; },
-        format: function (s) { return s.replace(new RegExp(/<.*?>/),""); },
-        type: 'text'
-    });
-
     roster.rosterOfficialPictureMode = false;
+
+    roster.nextPage = 0;
 
     /**
      * Renders a handlebars template.
@@ -129,7 +123,7 @@
             
         if (roster.STATE_OVERVIEW === state) {
 
-            roster.nextPage = 0;
+            roster.enrollmentSetToView = null;
 
             $('#navbar_overview_link > span').addClass('current');
 
@@ -144,14 +138,27 @@
             }
 
             roster.render('overview',
-                { 'siteGroups': roster.site.siteGroups,
-                    'viewOfficialPhoto': roster.currentUserPermissions.viewOfficialPhoto },
+                { siteGroups: roster.site.siteGroups,
+                    viewOfficialPhoto: roster.currentUserPermissions.viewOfficialPhoto },
                 'roster_content');
 
             $(document).ready(function () {
 
                 $('#roster-groups-selector').change(function (e) {
-                    roster.handleGroupSelection(this.value, showOfficialPictures);
+
+                    if (this.value === 'all') {
+                        roster.groupToView = null;
+                        roster.renderMembership({ forceOfficialPicture: showOfficialPictures, replace: true });
+                        $(document).ready( function () {
+
+                            $(window).on('scroll.roster', function (e) {
+
+                                roster.scrollFunction(showOfficialPictures);
+                            });
+                        });
+                    } else {
+                        roster.handleGroupSelection(this.value, showOfficialPictures);
+                    }
                 });
 
                 if (roster.currentUserPermissions.viewOfficialPhoto) {
@@ -179,17 +186,9 @@
                 roster.renderMembership({ forceOfficialPicture: showOfficialPictures, replace: false });
             });
 
-            $(window).on('scroll.roster', function () {
+            $(window).on('scroll.roster', function (e) {
 
-                var wintop = $(window).scrollTop(), docheight = $(document).height(), winheight = $(window).height();
-         
-                if  ((wintop/(docheight-winheight)) > 0.95) {
-                    if ((arg && arg.forceOfficialPicture) || roster.rosterOfficialPictureMode) {
-                        roster.renderMembership({ forceOfficialPicture: true, replace: false });
-                    } else {
-                        roster.renderMembership({ forceOfficialPicture: false, replace: false });
-                    }
-                }
+                roster.scrollFunction(showOfficialPictures);
             });
         } else if (roster.STATE_VIEW_PROFILE === state) {
             
@@ -204,21 +203,74 @@
             
         } else if (roster.STATE_ENROLLMENT_STATUS === state) {
 
+            roster.nextPage = 0;
+
             $('#navbar_enrollment_status_link > span').addClass('current');
             
             if (null === roster.enrollmentSetToView && null != roster.site.siteEnrollmentSets[0]) {
                 roster.enrollmentSetToView = roster.site.siteEnrollmentSets[0].id;
             }
 
-            roster.render('enrollment_header',
-                    { 'siteTitle': roster.site.title }, 'roster_header');
+            var showOfficialPictures = false;
 
+            if ((arg && arg.forceOfficialPicture) || roster.rosterOfficialPictureMode) {
+                showOfficialPictures = true;
+            }
+
+            roster.render('enrollment_overview',
+                { enrollmentSets: roster.site.siteEnrollmentSets,
+                    onlyOne: roster.site.siteEnrollmentSets.length == 1,
+                    enrollmentStatusDescriptions: roster.site.enrollmentStatusDescriptions,
+                    viewOfficialPhoto: roster.currentUserPermissions.viewOfficialPhoto },
+                'roster_content');
+
+            $(document).ready(function () {
+
+                $('#roster-enrollmentset-selector').change(function (e) {
+
+                    alert(this.value);
+
+                    /*
+                    roster.enrollmentSetToView = this.options[this.selectedIndex].value;
+                    roster.enrollmentSetToViewText = this.options[this.selectedIndex].text;
+                    roster.switchState(roster.STATE_ENROLLMENT_STATUS);
+                    */
+                });
+
+                if (roster.currentUserPermissions.viewOfficialPhoto) {
+
+                    $('#roster_official_picture_button').click(function (e) {
+
+                        roster.rosterOfficialPictureMode = true;
+                        roster.setupHideNamesAndSingleColumnButtons(state,searchQuery);
+                        roster.renderMembership({ forceOfficialPicture: true, replace: true });
+                    });
+        
+                    $('#roster_profile_picture_button').click(function (e) {
+
+                        roster.rosterOfficialPictureMode = false;
+                        roster.setupHideNamesAndSingleColumnButtons(state,searchQuery);
+                        roster.renderMembership({ forceOfficialPicture: false, replace: true });
+                    });
+                }
+
+                roster.readyExportButton(state);
+                roster.readySearchButton(state);
+                roster.readySearchField(searchQuery);
+                roster.readyClearButton(state);
+
+                roster.renderMembership({ forceOfficialPicture: showOfficialPictures, replace: false, enrollmentsMode: true });
+            });
+
+            /*
             roster.render('enrollment_section_filter',
                     { enrollmentSets: roster.site.siteEnrollmentSets,
                     onlyOne: roster.site.siteEnrollmentSets.length == 1,
                     enrollmentStatusDescriptions: roster.site.enrollmentStatusDescriptions },
                     'roster_section_filter');
+                    */
             
+            /*
             roster.getEnrolledMembers(searchQuery, function (enrollment) {
                     
                 roster.render('search_with_students',
@@ -263,6 +315,7 @@
                     }
                 });
             });
+            */
         } else if (roster.STATE_PERMISSIONS === state) {
 
             $('#navbar_permissions_link > span').addClass('current');
@@ -340,6 +393,8 @@
             url += "/get-membership.json?page=" + roster.nextPage;
             if (roster.groupToView) {
                 url += "&groupId=" + roster.groupToView;
+            } else if (roster.enrollmentSetToView) {
+                url += "&enrollmentSetId=" + roster.enrollmentSetToView;
             }
         }
 
@@ -371,7 +426,7 @@
                     m.hasGroups = Object.keys(m.groups).length > 0;
                 });
 
-                roster.renderMembers(members, $('#roster-members'));
+                roster.renderMembers(members, $('#roster-members'), options.enrollmentsMode);
 
                 $(document).ready(function () {
 
@@ -552,32 +607,15 @@
         field.autocomplete({
             source: roster.searchIndexKeys
         });
-        
-        /*
-        field.focus(function (e) {
-            if (this.value === roster.i18n.roster_search_text) {
-                this.value = "";
-            }
-        }).keypress(function (e) {
-            if (e.which == 13) {
-                $('#roster_form_search_button').click();
-                return false;
-            } else {
-                return true;
-            }
-        });
-        */
     };
 
     roster.readyEnrollmentFilters = function (numberOfEnrollmentSets) {
                 
         if (numberOfEnrollmentSets > 0) {
-            
             $('#roster_form_enrollment_set_filter').val(roster.enrollmentSetToViewText);
             $('#roster_form_enrollment_set_filter').change(function (e) {
                 roster.enrollmentSetToView = this.options[this.selectedIndex].value;
                 roster.enrollmentSetToViewText = this.options[this.selectedIndex].text;
-                
                 roster.switchState(roster.STATE_ENROLLMENT_STATUS);
             });
         }
@@ -684,7 +722,7 @@
         }	
     };
 
-    roster.renderMembers = function (members, target) {
+    roster.renderMembers = function (members, target, enrollmentsMode) {
 
         var templateData = {
                 'roster.language': roster.language,
@@ -701,13 +739,28 @@
                 'viewConnections': (undefined != window.friendStatus)
             };
 
-        var t = Handlebars.templates['members'];
+        var templateName = (enrollmentsMode) ? 'enrollments' : 'members';
+
+        var t = Handlebars.templates[templateName];
         target.append(t(templateData));
     };
 
     roster.handleGroupSelection = function (groupId, showOfficialPictures) {
 
         roster.renderGroupMembership(groupId, showOfficialPictures);
+    };
+
+    roster.scrollFunction = function (showOfficialPictures) {
+
+        var wintop = $(window).scrollTop(), docheight = $(document).height(), winheight = $(window).height();
+ 
+        if  ((wintop/(docheight-winheight)) > 0.95) {
+            if (showOfficialPictures) {
+                roster.renderMembership({ forceOfficialPicture: true, replace: false });
+            } else {
+                roster.renderMembership({ forceOfficialPicture: false, replace: false });
+            }
+        }
     };
 
     // Functions and attributes added. All the code from hereon is executed

@@ -20,6 +20,7 @@
 package org.sakaiproject.roster.api;
 
 import java.util.List;
+import java.util.Map;
 
 import org.sakaiproject.memory.api.Cache;
 import org.sakaiproject.site.api.Site;
@@ -36,6 +37,7 @@ public interface SakaiProxy {
 			"pics", "group_membership", "status" };
 
     public final static String MEMBERSHIPS_CACHE = "org.sakaiproject.roster.sortedMembershipsCache";
+    public final static String ENROLLMENTS_CACHE = "org.sakaiproject.roster.sortedEnrollmentsCache";
     public final static String SEARCH_INDEX_CACHE = "org.sakaiproject.roster.searchIndexCache";
 
 	public final static String DEFAULT_SORT_COLUMN = "sortName";
@@ -134,22 +136,7 @@ public interface SakaiProxy {
 
 	public Site getSite(String siteId);
 		
-	/**
-	 * Returns the list of viewable members from the specified site.
-	 * 
-	 * @param siteId the ID of the site.
-	 * @return the list of viewable members from the specified site.
-	 */
-	public List<RosterMember> getSiteMembership(String siteId);
-	
-	/**
-	 * Returns the list of viewable members from the specified group.
-	 * 
-	 * @param siteId the ID of the site the group belongs to.
-	 * @param groupId the ID of the group.
-	 * @return the list of viewable members from the specified group.
-	 */
-	public List<RosterMember> getGroupMembership(String siteId, String groupId);
+	public List<RosterMember> getMembership(String siteId, String groupId, String enrollmentSetId);
 
 	public RosterMember getMember(String siteId, String userId);
 
@@ -221,18 +208,7 @@ public interface SakaiProxy {
 	public boolean isSiteMaintainer(String siteId);
 
 	/**
-	 * Attempts to retrieve the memberships cache. If the cache doesn't exist
-     * it is created and returned.
-     *
-     * @return Either the existing Cache, or a new, empty one.
+	 * Attempts to retrieve the search index for the specified site.
 	 */
-    public Cache getMembershipsCache();
-
-	/**
-	 * Attempts to retrieve the search index cache. If the cache doesn't exist
-     * it is created and returned.
-     *
-     * @return Either the existing Cache, or a new, empty one.
-	 */
-    public Cache getSearchIndexCache();
+    public Map<String, String> getSearchIndex(String siteId);
 }

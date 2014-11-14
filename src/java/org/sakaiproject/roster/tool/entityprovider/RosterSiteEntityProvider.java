@@ -36,7 +36,6 @@ import org.sakaiproject.entitybroker.entityprovider.capabilities.Outputable;
 import org.sakaiproject.entitybroker.entityprovider.extension.Formats;
 import org.sakaiproject.entitybroker.exception.EntityException;
 import org.sakaiproject.entitybroker.util.AbstractEntityProvider;
-import org.sakaiproject.memory.api.Cache;
 import org.sakaiproject.roster.api.RosterMember;
 import org.sakaiproject.roster.api.RosterMemberComparator;
 import org.sakaiproject.roster.api.SakaiProxy;
@@ -100,7 +99,9 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 	@EntityCustomAction(action = "get-membership", viewKey = EntityView.VIEW_SHOW)
 	public Object getMembership(EntityReference reference, Map<String, Object> parameters) {
 
-		if (null == reference.getId() || DEFAULT_ID.equals(reference.getId())) {
+        String siteId = reference.getId();
+
+		if (null == siteId || DEFAULT_ID.equals(siteId)) {
 			throw new EntityException(ERROR_INVALID_SITE, reference.getReference());
 		}
 
@@ -108,6 +109,15 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 		if (parameters.containsKey(KEY_GROUP_ID)) {
 			groupId = parameters.get(KEY_GROUP_ID).toString();
 		}
+
+		String enrollmentSetId = null;
+		if (parameters != null && parameters.containsKey(KEY_ENROLLMENT_SET_ID)) {
+			enrollmentSetId = parameters.get(KEY_ENROLLMENT_SET_ID).toString();
+		}
+
+        if (groupId != null && enrollmentSetId != null) {
+			throw new EntityException("You can't specify a groupId AND an enrollmentSetId. One or the other, not both.", reference.getReference());
+        }
 
 		int page = 0;
 		if (parameters.containsKey(KEY_PAGE)) {
@@ -119,45 +129,14 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
             }
 		}
 
-        String siteId = reference.getId();
+		List<RosterMember> membership
+            = sakaiProxy.getMembership(siteId, groupId, enrollmentSetId);
 
-		List<RosterMember> membership = null;
-
-        // Try and load the sorted memberships from the cache
-        Cache membershipsCache = sakaiProxy.getMembershipsCache();
-
-        boolean cacheAfterSorting = false;
-        String cacheKey = siteId;
-
-		// if no group ID specified, retrieve site membership, else retrieve group
-		if (null == groupId) {
-            membership = (List<RosterMember>) membershipsCache.get(cacheKey);
-            if (membership == null) {
-                cacheAfterSorting = true;
-			    membership = sakaiProxy.getSiteMembership(siteId);
-            }
-		} else {
-            cacheKey = groupId;
-            membership = (List<RosterMember>) membershipsCache.get(cacheKey);
-            if (membership == null) {
-                cacheAfterSorting = true;
-			    membership = sakaiProxy.getGroupMembership(siteId, groupId);
-            }
-		}
-		
 		if (null == membership) {
 			throw new EntityException("Unable to retrieve membership", reference.getReference());
 		}
 
-        // We need to cache this now it has been sorted. Otherwise it is just
-        // a performance killer.
-        if (cacheAfterSorting) {
-            Collections.sort(membership, memberComparator);
-
-            membershipsCache.put(cacheKey, membership);
-        }
-
-        int pageSize = 20;
+        int pageSize = 10;
         int start  = page * pageSize;
         int membershipsSize = membership.size();
 
@@ -235,21 +214,7 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 			throw new EntityException(ERROR_INVALID_SITE, reference.getReference());
 		}
 
-        // Try and load the sorted memberships from the cache
-        Cache searchIndexCache = sakaiProxy.getSearchIndexCache();
-
-        Map<String, String> index
-            = (Map<String, String>) searchIndexCache.get(siteId);
-
-        if (index == null) {
-            index = new HashMap<String, String>();
-            for (User user : sakaiProxy.getSiteUsers(siteId)) {
-                index.put(user.getDisplayName(), user.getId());
-            }
-            searchIndexCache.put(siteId, index);
-        }
-		
-		return index;
+        return sakaiProxy.getSearchIndex(siteId);
 	}
 		
 	@EntityCustomAction(action = "get-enrollment", viewKey = EntityView.VIEW_SHOW)

@@ -211,3 +211,16 @@ table.rosterPicturesSingleColumn td {
 #roster-loading-image {
     display: none;
 }
+
+.roster-table {
+    display: table;
+}
+
+.roster-table-row {
+    display: table-row;
+}
+
+.roster-table-cell {
+    display: table-cell;
+    padding-right: 10px;
+}
