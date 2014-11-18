@@ -136,7 +136,7 @@ public interface SakaiProxy {
 
 	public Site getSite(String siteId);
 		
-	public List<RosterMember> getMembership(String siteId, String groupId, String enrollmentSetId);
+	public List<RosterMember> getMembership(String siteId, String groupId, String enrollmentSetId, String enrollmentStatus);
 
 	public RosterMember getMember(String siteId, String userId);
 
@@ -159,7 +159,7 @@ public interface SakaiProxy {
 	 * @return the enrollment set members for the specified site and enrollment
 	 *         set.
 	 */
-	public List<RosterMember> getEnrollmentMembership(String siteId, String enrollmentSetId);
+	//public List<RosterMember> getEnrollmentMembership(String siteId, String enrollmentSetId);
 	
 	/**
 	 * Returns whether or not the specified user is allowed the specified

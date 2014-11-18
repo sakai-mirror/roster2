@@ -131,10 +131,7 @@ public class SakaiProxyImpl implements SakaiProxy {
             functionManager.registerFunction(RosterFunctions.ROSTER_FUNCTION_VIEWOFFICIALPHOTO, true);
         }
 
-        memberComparator
-            = new RosterMemberComparator(RosterMemberComparator.SORT_NAME,
-                                    RosterMemberComparator.SORT_ASCENDING,
-                                    getFirstNameLastName());
+        memberComparator = new RosterMemberComparator(getFirstNameLastName());
 	}
 	
 	/**
@@ -320,7 +317,7 @@ public class SakaiProxyImpl implements SakaiProxy {
         return userDirectoryService.getUsers(site.getUsers());
     }
 	
-	public List<RosterMember> getMembership(String siteId, String groupId, String enrollmentSetId) {
+	public List<RosterMember> getMembership(String siteId, String groupId, String enrollmentSetId, String enrollmentStatus) {
 
         String userId = getCurrentUserId();
 
@@ -333,7 +330,7 @@ public class SakaiProxyImpl implements SakaiProxy {
 		}
 
         if (site.isType("course") && enrollmentSetId != null) {
-            return getEnrollmentMembership(siteId, enrollmentSetId);
+            return getEnrollmentMembership(siteId, enrollmentSetId, enrollmentStatus);
         } else {
             Cache cache = getCache(MEMBERSHIPS_CACHE);
 
@@ -627,9 +624,15 @@ public class SakaiProxyImpl implements SakaiProxy {
 	}
 	
 	/**
-	 * {@inheritDoc}
+	 * Returns the enrollment set members for the specified site and enrollment
+	 * set.
+	 * 
+	 * @param siteId the ID of the site.
+	 * @param enrollmentSetId the ID of the enrollment set.
+	 * @return the enrollment set members for the specified site and enrollment
+	 *         set.
 	 */
-	public List<RosterMember> getEnrollmentMembership(String siteId, String enrollmentSetId) {
+	private List<RosterMember> getEnrollmentMembership(String siteId, String enrollmentSetId, String enrollmentStatus) {
 
 		Site site = null;
 		try {
@@ -653,10 +656,25 @@ public class SakaiProxyImpl implements SakaiProxy {
         Map<String, List<RosterMember>> membersMap = (Map<String, List<RosterMember>>) cache.get(siteId);
 
         if (membersMap == null) {
-            cache.put(siteId, new HashMap<String, List<RosterMember>>());
+            membersMap = new HashMap<String, List<RosterMember>>();
+            cache.put(siteId, membersMap);
         }
 
-        List<RosterMember> enrolledMembers = membersMap.get(enrollmentSetId);
+        Map<String, String> statusCodes = courseManagementService.getEnrollmentStatusDescriptions(new ResourceLoader().getLocale());
+
+        String requestedEnrollmentStatusId = null;
+
+        if (enrollmentStatus != null) {
+            for (String id : statusCodes.keySet()) {
+                if (statusCodes.get(id).equals(enrollmentStatus)) {
+                    requestedEnrollmentStatusId = id;
+                }
+            }
+        }
+
+        String key = (requestedEnrollmentStatusId == null) ? enrollmentSetId : enrollmentSetId + "#" + requestedEnrollmentStatusId;
+
+        List<RosterMember> enrolledMembers = membersMap.get(key);
 
         if (enrolledMembers == null) {
 
@@ -668,16 +686,24 @@ public class SakaiProxyImpl implements SakaiProxy {
 			    return null;
 		    }
 
-		    Map<String, String> statusCodes = courseManagementService.getEnrollmentStatusDescriptions(new ResourceLoader().getLocale());
-
 		    Map<String, RosterMember> membership = getMembershipMapped(siteId, null, false);
 
 		    enrolledMembers = new ArrayList<RosterMember>();
 
+            List<RosterMember> waiting = new ArrayList<RosterMember>();
+            List<RosterMember> enrolled = new ArrayList<RosterMember>();
+
 		    for (Enrollment enrollment : courseManagementService.getEnrollments(enrollmentSet.getEid())) {
 			    RosterMember member = membership.get(enrollment.getUserId());
 			    member.setCredits(enrollment.getCredits());
-			    member.setEnrollmentStatus(statusCodes.get(enrollment.getEnrollmentStatus()));
+			    String enrollmentStatusId = enrollment.getEnrollmentStatus();
+			    member.setEnrollmentStatus(statusCodes.get(enrollmentStatusId));
+
+                if (enrollmentStatusId.equals("wait")) {
+                    waiting.add(member);
+                } else if (enrollmentStatusId.equals("enrolled")) {
+                    enrolled.add(member);
+                }
 
 			    enrolledMembers.add(member);
 		    }
@@ -691,6 +717,8 @@ public class SakaiProxyImpl implements SakaiProxy {
 
             // Cache them
             membersMap.put(enrollmentSetId, enrolledMembers);
+            membersMap.put(enrollmentSetId + "#wait", waiting);
+            membersMap.put(enrollmentSetId + "#enrolled", enrolled);
         }
 
 		return enrolledMembers;

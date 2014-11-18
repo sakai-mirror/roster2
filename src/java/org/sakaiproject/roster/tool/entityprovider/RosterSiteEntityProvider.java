@@ -63,31 +63,14 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 	public final static String ERROR_INVALID_SITE	= "Invalid site ID";
 	
 	// key passed as parameters
-	public final static String KEY_SORTED						= "sorted";
-	public final static String KEY_SORT_FIELD					= "sortField";
-	public final static String KEY_SORT_DIRECTION				= "sortDirection";
 	public final static String KEY_GROUP_ID						= "groupId";
 	public final static String KEY_USER_ID						= "userId";
 	public final static String KEY_PAGE                         = "page";
 	public final static String KEY_ENROLLMENT_SET_ID			= "enrollmentSetId";
-	
-	// defaults
-	public final static boolean DEFAULT_SORTED			= false;
-	public final static String DEFAULT_SORT_FIELD		= RosterMemberComparator.SORT_NAME;
-	public final static int DEFAULT_SORT_DIRECTION		= RosterMemberComparator.SORT_ASCENDING;
-
-    private RosterMemberComparator memberComparator;
+	public final static String KEY_ENROLLMENT_STATUS			= "enrollmentStatus";
 	
     @Setter
 	private SakaiProxy sakaiProxy;
-
-    public void init() {
-
-        memberComparator
-            = new RosterMemberComparator(RosterMemberComparator.SORT_NAME,
-                                    RosterMemberComparator.SORT_ASCENDING,
-                                    sakaiProxy.getFirstNameLastName());
-    }
 	
 	/**
 	 * {@inheritDoc}
@@ -119,6 +102,11 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 			throw new EntityException("You can't specify a groupId AND an enrollmentSetId. One or the other, not both.", reference.getReference());
         }
 
+		String enrollmentStatus = null;
+		if (parameters != null && parameters.containsKey(KEY_ENROLLMENT_STATUS)) {
+			enrollmentStatus = parameters.get(KEY_ENROLLMENT_STATUS).toString();
+		}
+
 		int page = 0;
 		if (parameters.containsKey(KEY_PAGE)) {
             String pageString = parameters.get(KEY_PAGE).toString();
@@ -130,7 +118,7 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 		}
 
 		List<RosterMember> membership
-            = sakaiProxy.getMembership(siteId, groupId, enrollmentSetId);
+            = sakaiProxy.getMembership(siteId, groupId, enrollmentSetId, enrollmentStatus);
 
 		if (null == membership) {
 			throw new EntityException("Unable to retrieve membership", reference.getReference());
@@ -217,6 +205,7 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
         return sakaiProxy.getSearchIndex(siteId);
 	}
 		
+    /*
 	@EntityCustomAction(action = "get-enrollment", viewKey = EntityView.VIEW_SHOW)
 	public Object getEnrollment(EntityReference reference, Map<String, Object> parameters) {
 		
@@ -229,43 +218,14 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 			enrollmentSetId = parameters.get(KEY_ENROLLMENT_SET_ID).toString();
 		}
 		
-		return sakaiProxy.getEnrollmentMembership(reference.getId(), enrollmentSetId);
+		return sakaiProxy.getEnrollmentMembership(reference.getId(), enrollmentSetId, null);
 	}
+    */
 
 	/**
 	 * {@inheritDoc}
 	 */
 	public String[] getHandledOutputFormats() {
 		return new String[] { Formats.JSON };
-	}
-	
-	private Boolean getSortedValue(Map<String, Object> parameters) {
-		
-		if (null != parameters.get(KEY_SORTED)) {
-			return Boolean.parseBoolean(parameters.get(KEY_SORTED).toString());
-		} else {
-			return DEFAULT_SORTED;
-		}
-	}
-	
-	private int getSortDirectionValue(Map<String, Object> parameters) {
-
-		if (null != parameters.get(KEY_SORT_DIRECTION)) {
-			return Integer.parseInt(parameters.get(KEY_SORT_DIRECTION)
-					.toString());
-		} else {
-			return DEFAULT_SORT_DIRECTION;
-		}
-		
-	}
-	
-	private String getSortFieldValue(Map<String, Object> parameters) {
-		String sortField;
-		if (null != parameters.get(KEY_SORT_FIELD)) {
-			sortField = parameters.get(KEY_SORT_FIELD).toString();
-		} else {
-			sortField = DEFAULT_SORT_FIELD;
-		}
-		return sortField;
 	}
 }

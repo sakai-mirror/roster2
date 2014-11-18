@@ -40,17 +40,7 @@
 
     roster.DEFAULT_GROUP_ID = 'all';
     roster.DEFAULT_ENROLLMENT_STATUS = 'All';
-    roster.DEFAULT_SORT_LIST = [[0,0]];
     roster.DEFAULT_STATE = roster.STATE_OVERVIEW;
-
-    roster.SORT_NAME = 'sortName';
-    roster.SORT_DISPLAY_ID = 'displayId';
-    roster.SORT_EMAIL = 'email';
-    roster.SORT_ROLE = 'role';
-    roster.SORT_STATUS	= "status";
-    roster.SORT_CREDITS	= "credits";
-
-    roster.columnSortFields = [];
 
     /* Stuff that we always expect to be setup */
     roster.language = null;
@@ -69,17 +59,9 @@
     roster.enrollmentSetToView = null;
     roster.enrollmentSetToViewText = null;
     roster.enrollmentStatusToViewText = roster.i18n.roster_enrollment_status_all;
-
-    roster.sortColumn = null;
-
-    // sortEnd is used to update this so we know which column and direction the
-    // tables are sorted in when exporting
-    roster.currentSortColumn = 0;
-    roster.currentSortDirection = 0;
-
     roster.rosterOfficialPictureMode = false;
-
     roster.nextPage = 0;
+    roster.currentState = null;
 
     /**
      * Renders a handlebars template.
@@ -92,6 +74,8 @@
 
     roster.switchState = function (state, arg, searchQuery) {
 
+        roster.currentState = state;
+
         $('#roster_navbar > li > span').removeClass('current');
         
         // so we can return to the previous state after viewing permissions
@@ -99,9 +83,6 @@
             roster.rosterLastStateNotPermissions = state;
         }
         
-        // for export to Excel
-        roster.setColumnSortFields(state);
-                
         // permissions
         if (roster.siteMaintainer) {
             $('#navbar_permissions_link').show();
@@ -170,7 +151,6 @@
                     });
                 }
 
-                roster.readyExportButton(state);
                 roster.readySearchButton(state);
                 roster.readySearchField(searchQuery);
                 roster.readyClearButton(state);
@@ -228,7 +208,7 @@
 
                 $('#roster-status-selector').change(function (e) {
 
-                    //var clazz = '.roster-status-' + this.options[this.selectedIndex].text;
+                    roster.renderMembership({ forceOfficialPicture: showOfficialPictures, replace: true, enrollmentsMode: true, enrollmentStatus: this.value });
                 });
 
                 if (roster.currentUserPermissions.viewOfficialPhoto) {
@@ -246,7 +226,6 @@
                     });
                 }
 
-                roster.readyExportButton(state);
                 roster.readySearchButton(state);
                 roster.readySearchField(searchQuery);
                 roster.readyClearButton(state);
@@ -308,7 +287,7 @@
 
             $(window).off('scroll.roster').on('scroll.roster', function (e) {
 
-                roster.scrollFunction(options.forceOfficialPicture, options.enrollmentsMode);
+                roster.scrollFunction(options.forceOfficialPicture, options.enrollmentsMode, options.enrollmentStatus);
             });
         }
 
@@ -323,6 +302,10 @@
             } else if (roster.enrollmentSetToView) {
                 url += "&enrollmentSetId=" + roster.enrollmentSetToView;
             }
+        }
+
+        if (options.enrollmentStatus) {
+            url += '&enrollmentStatus=' + options.enrollmentStatus;
         }
 
         var loadImage = $('#roster-loading-image')
@@ -387,62 +370,6 @@
         });
     };
 
-    roster.readyExportButton = function (viewType) {
-            
-        $('#export_button').click(function (e) {
-        
-            e.preventDefault();
-            
-            var baseUrl = "/direct/roster-export/" + roster.siteId +
-                "/export-to-excel?viewType=" + viewType +
-                "&sortField=" + roster.columnSortFields[roster.currentSortColumn] +
-                "&sortDirection=" + roster.currentSortDirection;
-            
-            var facetParams = "&facetName=" + roster.i18n.facet_name +
-                "&facetUserId=" + roster.i18n.facet_userId +
-                "&facetEmail=" + roster.i18n.facet_email +
-                "&facetRole=" + roster.i18n.facet_role +
-                "&facetGroups=" + roster.i18n.facet_groups +
-                "&facetStatus=" + roster.i18n.facet_status +
-                "&facetCredits=" + roster.i18n.facet_credits;
-            
-            if (roster.STATE_OVERVIEW === viewType) {
-                var groupId = null;
-                if (null != roster.groupToView) {
-                    groupId = roster.groupToView;
-                } else {
-                    groupId = roster.DEFAULT_GROUP_ID;
-                }
-                
-                window.location.href = baseUrl + "&groupId=" + groupId + facetParams;
-            } else if (roster.STATE_ENROLLMENT_STATUS === viewType) {
-            
-                var enrollmentStatus = null;
-                if (roster.enrollmentStatusToViewText == roster_enrollment_status_all) {
-                    enrollmentStatus = roster.DEFAULT_ENROLLMENT_STATUS;
-                } else {
-                    enrollmentStatus = roster.enrollmentStatusToViewText;
-                }
-                
-                window.location.href = baseUrl + 
-                    "&enrollmentSetId=" + roster.enrollmentSetToView +
-                    "&enrollmentStatus=" + enrollmentStatus +
-                    facetParams;
-            }
-        });
-            
-        // hide export button if necessary
-        if (roster.STATE_OVERVIEW === viewType || 
-                roster.STATE_ENROLLMENT_STATUS === viewType) {
-            
-            if (roster.currentUserPermissions.rosterExport) {
-                $('#export_button').show();
-            } else {
-                $('#export_button').hide();
-            }
-        }
-    };
-
     roster.readySearchButton = function (state) {
         
         $('#roster_form_search_button').click(function (e) {
@@ -464,105 +391,6 @@
         field.autocomplete({
             source: roster.searchIndexKeys
         });
-    };
-
-    roster.readyEnrollmentFilters = function (numberOfEnrollmentSets) {
-                
-        if (numberOfEnrollmentSets > 0) {
-            $('#roster_form_enrollment_set_filter').val(roster.enrollmentSetToViewText);
-            $('#roster_form_enrollment_set_filter').change(function (e) {
-                roster.enrollmentSetToView = this.options[this.selectedIndex].value;
-                roster.enrollmentSetToViewText = this.options[this.selectedIndex].text;
-                roster.switchState(roster.STATE_ENROLLMENT_STATUS);
-            });
-        }
-        
-        $('#roster-status-selector')
-            .val(roster.enrollmentStatusToViewText)
-            .change(function (e) {
-            
-                roster.enrollmentStatusToViewText = this.options[this.selectedIndex].text;
-                roster.switchState(roster.STATE_ENROLLMENT_STATUS);
-            });
-        
-    };
-
-    roster.getEnrollmentStatusTableSort = function () {
-
-        var enrollmentSortParams = null;
-        
-        // enrollment status has both user display ID and email column, but we
-        // probably don't want to hide user display IDs on the enrollment table
-        
-        if (roster.viewEmail) {
-            enrollmentSortParams = { headers: {1: {sorter: 'urls'}, 2: {sorter:'urls'}}, sortList: [[0,0]] };
-        } else {
-            enrollmentSortParams = { headers: {1: {sorter: 'urls'}}, sortList: [[0,0]] };
-        }
-        
-        // now set the initial sort column
-        // enrollment table doesn't have role, so use name as default sort column
-        if (roster.SORT_NAME === roster.sortColumn || roster.SORT_ROLE === roster.sortColumn) {
-            enrollmentSortParams.sortList = [[0,0]];
-        } else if (roster.SORT_DISPLAY_ID === roster.sortColumn) {
-            enrollmentSortParams.sortList = [[1,0]];
-        } else if (roster.SORT_EMAIL === roster.sortColumn) {
-            
-            if (roster.viewEmail) {
-                enrollmentSortParams.sortList = [[2,0]];
-            }
-            
-        } else if (roster.SORT_STATUS === roster.sortColumn) {
-        
-            if (roster.viewEmail) {
-                enrollmentSortParams.sortList = [[3,0]];
-            } else {
-                enrollmentSortParams.sortList = [[2,0]];
-            }
-        } else if (roster.SORT_CREDITS === roster.sortColumn) {
-            
-            if (roster.viewEmail) {
-                enrollmentSortParams.sortList = [[4,0]];
-            } else {
-                enrollmentSortParams.sortList = [[3,0]];
-            }
-        }
-
-        return enrollmentSortParams;
-    };
-
-    /**
-     * This computes the columns array which is used to determine the sortField
-     * when exporting to Excel
-     */
-    roster.setColumnSortFields = function (state) {
-        
-        roster.columnSortFields[0] = roster.SORT_NAME;
-        
-        if (roster.STATE_OVERVIEW === state) {
-            
-            if (roster.viewUserDisplayId && roster.viewEmail) {
-                roster.columnSortFields[1] = roster.SORT_DISPLAY_ID;
-                roster.columnSortFields[2] = roster.SORT_EMAIL;
-                roster.columnSortFields[3] = roster.SORT_ROLE;
-            } else if (roster.viewUserDisplayId) {
-                roster.columnSortFields[1] = roster.SORT_DISPLAY_ID;
-                roster.columnSortFields[2] = roster.SORT_ROLE;
-            } else if (roster.viewEmail) {
-                roster.columnSortFields[1] = roster.SORT_EMAIL;
-                roster.columnSortFields[2] = roster.SORT_ROLE;
-            }
-        } else if (roster.STATE_ENROLLMENT_STATUS === state) {
-            
-            if (roster.viewEmail) {
-                roster.columnSortFields[2] = roster.SORT_EMAIL;
-                roster.columnSortFields[3] = roster.SORT_STATUS;
-                roster.columnSortFields[4] = roster.SORT_CREDITS;
-            } else {
-                roster.columnSortFields[2] = roster.SORT_STATUS;
-                roster.columnSortFields[3] = roster.SORT_CREDITS;
-            }
-        }	
     };
 
     roster.renderMembers = function (members, target, enrollmentsMode) {
@@ -593,15 +421,15 @@
         roster.renderGroupMembership(groupId, showOfficialPictures);
     };
 
-    roster.scrollFunction = function (showOfficialPictures, enrollmentsMode) {
+    roster.scrollFunction = function (showOfficialPictures, enrollmentsMode, enrollmentStatus) {
 
         var wintop = $(window).scrollTop(), docheight = $(document).height(), winheight = $(window).height();
  
         if  ((wintop/(docheight-winheight)) > 0.95) {
             if (showOfficialPictures) {
-                roster.renderMembership({ forceOfficialPicture: true, replace: false, enrollmentsMode: enrollmentsMode});
+                roster.renderMembership({ forceOfficialPicture: true, replace: false, enrollmentsMode: enrollmentsMode, enrollmentStatus: enrollmentStatus });
             } else {
-                roster.renderMembership({ forceOfficialPicture: false, replace: false, enrollmentsMode: enrollmentsMode });
+                roster.renderMembership({ forceOfficialPicture: false, replace: false, enrollmentsMode: enrollmentsMode, enrollmentStatus: enrollmentStatus });
             }
         }
     };
@@ -649,12 +477,6 @@
 
     Handlebars.registerHelper('incoming', function () {
 	    return this.connectionStatus === CONNECTION_INCOMING;
-    });
-
-    Handlebars.registerHelper('rowComplete', function (index) {
-
-        // index is zero based
-	    return (index + 1) % 4 == 0;
     });
 
     Handlebars.registerHelper('roleAllowed', function (options) {
@@ -718,27 +540,51 @@
 	$('#navbar_enrollment_status_link > span > a').click(function (e) {
 		return roster.switchState(roster.STATE_ENROLLMENT_STATUS);
 	});
+
+    $('#navbar_export_link > span > a').click(function (e) {
+
+        e.preventDefault();
+        
+        var baseUrl = "/direct/roster-export/" + roster.siteId +
+            "/export-to-excel?viewType=" + roster.currentState;
+        
+        var facetParams = "&facetName=" + roster.i18n.facet_name +
+            "&facetUserId=" + roster.i18n.facet_userId +
+            "&facetEmail=" + roster.i18n.facet_email +
+            "&facetRole=" + roster.i18n.facet_role +
+            "&facetGroups=" + roster.i18n.facet_groups +
+            "&facetStatus=" + roster.i18n.facet_status +
+            "&facetCredits=" + roster.i18n.facet_credits;
+        
+        if (roster.STATE_OVERVIEW === roster.currentState) {
+            var groupId = null;
+            if (null != roster.groupToView) {
+                groupId = roster.groupToView;
+            } else {
+                groupId = roster.DEFAULT_GROUP_ID;
+            }
+            
+            window.location.href = baseUrl + "&groupId=" + groupId + facetParams;
+        } else if (roster.STATE_ENROLLMENT_STATUS === roster.currentState) {
+        
+            var enrollmentStatus = null;
+            if (roster.enrollmentStatusToViewText == roster_enrollment_status_all) {
+                enrollmentStatus = roster.DEFAULT_ENROLLMENT_STATUS;
+            } else {
+                enrollmentStatus = roster.enrollmentStatusToViewText;
+            }
+            
+            window.location.href = baseUrl + 
+                "&enrollmentSetId=" + roster.enrollmentSetToView +
+                "&enrollmentStatus=" + enrollmentStatus +
+                facetParams;
+        }
+    });
 	
     $('#navbar_permissions_link > span > a').click(function (e) {
         return roster.switchState(roster.STATE_PERMISSIONS);
     });
         	
-	// process sakai.properties
-		
-    if (roster.SORT_NAME == roster.defaultSortColumn ||
-            roster.SORT_DISPLAY_ID == roster.defaultSortColumn ||
-            roster.SORT_ROLE == roster.defaultSortColumn ||
-            roster.SORT_STATUS == roster.defaultSortColumn ||
-            roster.SORT_CREDITS == roster.defaultSortColumn) {
-        
-        roster.sortColumn = roster.defaultSortColumn;
-    } else if (roster.SORT_EMAIL == roster.defaultSortColumn && true == roster.viewEmail) {
-        // if chosen sort is email, check that email column is viewable
-        roster.sortColumn = roster.defaultSortColumn;
-    }
-	
-	// end of sakai.properties
-	
     try {
         if (window.frameElement) {
             window.frameElement.style.minHeight = '600px';

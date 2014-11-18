@@ -25,7 +25,7 @@
 	</bean>
 	
 	<bean parent="org.sakaiproject.entitybroker.entityprovider.AbstractEntityProvider" 
-		class="org.sakaiproject.roster.tool.entityprovider.RosterSiteEntityProvider" init-method="init">
+		class="org.sakaiproject.roster.tool.entityprovider.RosterSiteEntityProvider">
         <property name="sakaiProxy"><ref bean="org.sakaiproject.roster.api.SakaiProxy"/></property>
     </bean>
 
