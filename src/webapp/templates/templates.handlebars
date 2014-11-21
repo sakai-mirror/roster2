@@ -387,7 +387,7 @@ templates['enrollments'] = template({"1":function(depth0,helpers,partials,data,d
   return buffer;
 },"useData":true,"useDepths":true});
 templates['members'] = template({"1":function(depth0,helpers,partials,data,depths) {
-  var stack1, buffer = "<div class=\"roster-member\">\n";
+  var stack1, helper, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, functionType="function", buffer = "<div class=\"roster-member\">\n";
   stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewPicture : depths[1]), {"name":"if","hash":{},"fn":this.program(2, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   buffer += "\n    <div class=\"roster-info\">\n\n        <div class=\"roster-table\">\n";
@@ -396,7 +396,11 @@ templates['members'] = template({"1":function(depth0,helpers,partials,data,depth
   buffer += "\n            <div class=\"roster-table-row\">\n";
   stack1 = helpers['if'].call(depth0, (depths[1] != null ? depths[1].viewUserDisplayId : depths[1]), {"name":"if","hash":{},"fn":this.program(12, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  buffer += "            </div>\n\n";
+  buffer += "            </div>\n\n            <div class=\"roster-table-row\">\n                <div class=\"roster-table-cell\">"
+    + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "facet_role", {"name":"translate","hash":{},"data":data})))
+    + "</div>\n                <div class=\"roster-table-cell\">"
+    + escapeExpression(((helper = (helper = helpers.role || (depth0 != null ? depth0.role : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"role","hash":{},"data":data}) : helper)))
+    + "</div>\n            </div>\n\n";
   stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.hasGroups : depth0), {"name":"if","hash":{},"fn":this.program(14, data, depths),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
   buffer += "        </div>\n\n        <div class=\"rosterActions\">\n";
