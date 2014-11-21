@@ -303,7 +303,7 @@ public class SakaiProxyImpl implements SakaiProxy {
             return null;
         } else {
             // Get the unfiltered memberships
-            List<RosterMember> members = getAndCacheSortedMembership(site, null);
+            List<RosterMember> members = getAndCacheSortedMembership(site, null, null);
             members = filterMembers(site, getCurrentUserId(), members, null);
             for (RosterMember member : members) {
                 if (member.getUserId().equals(userId)) {
@@ -328,7 +328,7 @@ public class SakaiProxyImpl implements SakaiProxy {
         return userDirectoryService.getUsers(site.getUsers());
     }
 	
-	public List<RosterMember> getMembership(String siteId, String groupId, String enrollmentSetId, String enrollmentStatus) {
+	public List<RosterMember> getMembership(String siteId, String groupId, String roleId, String enrollmentSetId, String enrollmentStatus) {
 
 		Site site = null;
 		try {
@@ -343,7 +343,7 @@ public class SakaiProxyImpl implements SakaiProxy {
         if (site.isType("course") && enrollmentSetId != null) {
             return getEnrollmentMembership(site, enrollmentSetId, enrollmentStatus, currentUserId);
         } else {
-            List<RosterMember> rosterMembers = getAndCacheSortedMembership(site, groupId);
+            List<RosterMember> rosterMembers = getAndCacheSortedMembership(site, groupId, roleId);
             rosterMembers = filterMembers(site, currentUserId, rosterMembers, groupId);
             return rosterMembers;
         }
@@ -619,7 +619,7 @@ public class SakaiProxyImpl implements SakaiProxy {
      *  cached and the requested list is returned. IT IS THE CALLER'S
      *  RESPONSIBILITY TO FILTER ON AUTHZ RULES.
      */
-    private List<RosterMember> getAndCacheSortedMembership(Site site, String groupId) {
+    private List<RosterMember> getAndCacheSortedMembership(Site site, String groupId, String roleId) {
 
         String siteId = site.getId();
 
@@ -627,9 +627,20 @@ public class SakaiProxyImpl implements SakaiProxy {
 
         String key = (groupId == null) ? siteId : groupId;
 
+        if (groupId == null && roleId != null) {
+            key += "#" + roleId;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("Key: " + key);
+        }
+
         List<RosterMember> siteMembers = (List<RosterMember>) cache.get(key);
 
         if (siteMembers != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Cache hit on '" + key + "'.");
+            }
             return siteMembers;
         } else {
             if (log.isDebugEnabled()) {
@@ -648,8 +659,14 @@ public class SakaiProxyImpl implements SakaiProxy {
 
             Collection<Group> groups = site.getGroups();
 
+            // Precache an empty list for each group
             for (Group group : groups) {
                 cache.put(group.getId(), new ArrayList<RosterMember>());
+            }
+
+            // Same for site role
+            for (Role role : site.getRoles()) {
+                cache.put(siteId + "#" + role.getId(), new ArrayList<RosterMember>());
             }
 
             for (Member member : membership) {
@@ -663,6 +680,10 @@ public class SakaiProxyImpl implements SakaiProxy {
                         List<RosterMember> groupMembers = (List<RosterMember>) cache.get(memberGroupId);
                         groupMembers.add(rosterMember);
                     }
+
+                    String memberRoleId = rosterMember.getRole();
+                    List<RosterMember> roleMembers = (List<RosterMember>) cache.get(siteId + "#" + memberRoleId);
+                    roleMembers.add(rosterMember);
                 } catch (UserNotDefinedException e) {
                     log.warn("user not found: " + e.getId());
                 }

@@ -64,6 +64,7 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 	
 	// key passed as parameters
 	public final static String KEY_GROUP_ID						= "groupId";
+	public final static String KEY_ROLE_ID						= "roleId";
 	public final static String KEY_USER_ID						= "userId";
 	public final static String KEY_PAGE                         = "page";
 	public final static String KEY_ENROLLMENT_SET_ID			= "enrollmentSetId";
@@ -93,6 +94,11 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 			groupId = parameters.get(KEY_GROUP_ID).toString();
 		}
 
+		String roleId = null;
+		if (parameters.containsKey(KEY_ROLE_ID)) {
+			roleId = parameters.get(KEY_ROLE_ID).toString();
+		}
+
 		String enrollmentSetId = null;
 		if (parameters != null && parameters.containsKey(KEY_ENROLLMENT_SET_ID)) {
 			enrollmentSetId = parameters.get(KEY_ENROLLMENT_SET_ID).toString();
@@ -118,7 +124,7 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 		}
 
 		List<RosterMember> membership
-            = sakaiProxy.getMembership(siteId, groupId, enrollmentSetId, enrollmentStatus);
+            = sakaiProxy.getMembership(siteId, groupId, roleId, enrollmentSetId, enrollmentStatus);
 
 		if (null == membership) {
 			throw new EntityException("Unable to retrieve membership", reference.getReference());

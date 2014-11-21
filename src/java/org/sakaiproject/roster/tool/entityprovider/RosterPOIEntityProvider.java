@@ -276,9 +276,9 @@ public class RosterPOIEntityProvider extends AbstractEntityProvider implements
 		List<RosterMember> rosterMembers;
 		
 		if (DEFAULT_GROUP_ID.equals(groupId)) {
-			rosterMembers = sakaiProxy.getMembership(siteId, null, null, null);
+			rosterMembers = sakaiProxy.getMembership(siteId, null, null, null, null);
 		} else {
-			rosterMembers = sakaiProxy.getMembership(siteId, groupId, null, null);
+			rosterMembers = sakaiProxy.getMembership(siteId, groupId, null, null, null);
 		}
 		
 		if (null == rosterMembers) {
@@ -290,7 +290,7 @@ public class RosterPOIEntityProvider extends AbstractEntityProvider implements
 	
 	private List<RosterMember> getEnrolledMembership(String siteId, String enrollmentSetId, String enrollmentStatusId) {
 
-		List<RosterMember> rosterMembers = sakaiProxy.getMembership(siteId, null, enrollmentSetId, enrollmentStatusId);
+		List<RosterMember> rosterMembers = sakaiProxy.getMembership(siteId, null, null, enrollmentSetId, enrollmentStatusId);
 		
 		List<RosterMember> membersByStatus = null;
 		if (DEFAULT_ENROLLMENT_STATUS.equals(enrollmentStatusId)) {

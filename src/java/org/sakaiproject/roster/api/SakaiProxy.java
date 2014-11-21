@@ -136,7 +136,7 @@ public interface SakaiProxy {
 
 	public Site getSite(String siteId);
 		
-	public List<RosterMember> getMembership(String siteId, String groupId, String enrollmentSetId, String enrollmentStatus);
+	public List<RosterMember> getMembership(String siteId, String groupId, String roleId, String enrollmentSetId, String enrollmentStatus);
 
 	public RosterMember getMember(String siteId, String userId, String enrollmentSetId);
 
