@@ -813,6 +813,8 @@ public class SakaiProxyImpl implements SakaiProxy {
 
 		rosterSite.setTitle(site.getTitle());
 
+        rosterSite.setMembersTotal(site.getMembers().size());
+
 		List<RosterGroup> siteGroups = getViewableSiteGroups(currentUserId,
 				site);
 
@@ -823,10 +825,15 @@ public class SakaiProxyImpl implements SakaiProxy {
 			rosterSite.setSiteGroups(siteGroups);
 		}
 
+        Map<String, Integer> roleCounts = new HashMap<String, Integer>();
 		List<String> userRoles = new ArrayList<String>();
 		for (Role role : site.getRoles()) {
-			userRoles.add(role.getId());
+            String roleId = role.getId();
+			userRoles.add(roleId);
+            roleCounts.put(roleId, site.getUsersHasRole(roleId).size());
 		}
+
+        rosterSite.setRoleCounts(roleCounts);
 
 		if (0 == userRoles.size()) {
 			// to avoid IndexOutOfBoundsException in EB code

@@ -46,5 +46,8 @@ public class RosterSite {
 	private List<RosterEnrollment> siteEnrollmentSets;
 	@Getter @Setter
 	private Map<String, String> enrollmentStatusCodes;
-	
+	@Getter @Setter
+	private int membersTotal;
+	@Getter @Setter
+	private Map<String, Integer> roleCounts;
 }

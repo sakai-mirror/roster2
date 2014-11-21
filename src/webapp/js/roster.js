@@ -125,6 +125,8 @@
 
             roster.render('overview',
                 { siteGroups: roster.site.siteGroups,
+                    membersTotal: roster.i18n.currently_displaying_participants.replace(/\{0\}/, roster.site.membersTotal),
+                    roleFragments: roster.getRoleFragments(),
                     viewOfficialPhoto: roster.currentUserPermissions.viewOfficialPhoto },
                 'roster_content');
 
@@ -452,6 +454,15 @@
                 roster.renderMembership({ forceOfficialPicture: false, replace: false, enrollmentStatus: enrollmentStatus });
             }
         }
+    };
+
+    roster.getRoleFragments = function () {
+
+        return Object.keys(roster.site.roleCounts).map(function (key) {
+
+            var frag = roster.i18n.role_breakdown_fragment.replace(/\{0\}/, roster.site.roleCounts[key]);
+            return frag.replace(/\{1\}/, key);
+        }).join();
     };
 
     // Functions and attributes added. All the code from hereon is executed
