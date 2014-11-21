@@ -20,6 +20,7 @@
 package org.sakaiproject.roster.api;
 
 import java.util.List;
+import java.util.Map;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,6 @@ public class RosterSite {
 	@Getter @Setter
 	private List<RosterEnrollment> siteEnrollmentSets;
 	@Getter @Setter
-	private List<String> enrollmentStatusDescriptions;
+	private Map<String, String> enrollmentStatusCodes;
 	
 }

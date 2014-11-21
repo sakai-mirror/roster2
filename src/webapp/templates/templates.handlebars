@@ -27,7 +27,7 @@ templates['enrollment_overview'] = template({"1":function(depth0,helpers,partial
 },"5":function(depth0,helpers,partials,data) {
   var lambda=this.lambda, escapeExpression=this.escapeExpression;
   return "                        <option value=\""
-    + escapeExpression(lambda(depth0, depth0))
+    + escapeExpression(lambda((data && data.key), depth0))
     + "\">"
     + escapeExpression(lambda(depth0, depth0))
     + "</option>\n";
@@ -62,12 +62,12 @@ templates['enrollment_overview'] = template({"1":function(depth0,helpers,partial
     + "</div>\n            <div class=\"roster-table-cell\">\n                <select id=\"roster-status-selector\">\n                    <option selected=\"selected\" value=\"\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "roster_enrollment_status_all", {"name":"translate","hash":{},"data":data})))
     + "</option>\n";
-  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.enrollmentStatusDescriptions : depth0), {"name":"each","hash":{},"fn":this.program(5, data),"inverse":this.noop,"data":data});
+  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.enrollmentStatusCodes : depth0), {"name":"each","hash":{},"fn":this.program(5, data),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  buffer += "                </select>\n            </div>\n        </div>\n    </div>\n<table id=\"roster_form:search_group\" class=\"searchFilter\">\n	<tbody>\n		<tr>\n			<td>\n				<div id=\"roster_form:search_filter\" class=\"act\">\n					<input id=\"roster_form_search_field\" type=\"text\" value=\"";
+  buffer += "                </select>\n            </div>\n        </div>\n    </div>\n<table id=\"roster_form:search_group\" class=\"searchFilter\">\n	<tbody>\n		<tr>\n			<td>\n				<div id=\"roster_form:search_filter\" class=\"act\">\n					<input id=\"roster-search-field\" type=\"text\" value=\"";
   stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.searchQuery : depth0), {"name":"if","hash":{},"fn":this.program(7, data),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  buffer += "\" name=\"roster_form_search\" />\n					<input id=\"roster_form_search_button\" class=\"active\" type=\"button\" value=\""
+  buffer += "\" name=\"roster_form_search\" />\n					<input id=\"roster-search-button\" class=\"active\" type=\"button\" value=\""
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "roster_search_button", {"name":"translate","hash":{},"data":data})))
     + "\" name=\"roster_form:search_button\" />\n					<input id=\"roster_form_clear_button\" type=\"button\" value=\""
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "roster_clear_button", {"name":"translate","hash":{},"data":data})))
@@ -232,7 +232,7 @@ templates['enrollments'] = template({"1":function(depth0,helpers,partials,data,d
   buffer += "            </div>\n\n            <div class=\"roster-table-row\">\n                <div class=\"roster-table-cell\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "facet_status", {"name":"translate","hash":{},"data":data})))
     + "</div>\n                <div class=\"roster-table-cell\"><b>"
-    + escapeExpression(((helper = (helper = helpers.enrollmentStatus || (depth0 != null ? depth0.enrollmentStatus : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"enrollmentStatus","hash":{},"data":data}) : helper)))
+    + escapeExpression(((helper = (helper = helpers.enrollmentStatusText || (depth0 != null ? depth0.enrollmentStatusText : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"enrollmentStatusText","hash":{},"data":data}) : helper)))
     + "</b></div>\n            </div>\n            <div class=\"roster-table-row\">\n                <div class=\"roster-table-cell\">"
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "facet_credits", {"name":"translate","hash":{},"data":data})))
     + "</div>\n                <div class=\"roster-table-cell\"><b>"
@@ -630,10 +630,10 @@ templates['overview'] = template({"1":function(depth0,helpers,partials,data) {
     + "</option>\n";
   stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.siteGroups : depth0), {"name":"each","hash":{},"fn":this.program(3, data),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  buffer += "    </select>\n</div>\n<table id=\"roster_form:search_group\" class=\"searchFilter\">\n	<tbody>\n		<tr>\n			<td>\n				<div id=\"roster_form:search_filter\" class=\"act\">\n					<input id=\"roster_form_search_field\" type=\"text\" value=\"";
+  buffer += "    </select>\n</div>\n<table id=\"roster_form:search_group\" class=\"searchFilter\">\n	<tbody>\n		<tr>\n			<td>\n				<div id=\"roster_form:search_filter\" class=\"act\">\n					<input id=\"roster-search-field\" type=\"text\" value=\"";
   stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.searchQuery : depth0), {"name":"if","hash":{},"fn":this.program(5, data),"inverse":this.noop,"data":data});
   if (stack1 != null) { buffer += stack1; }
-  buffer += "\" name=\"roster_form_search\" />\n					<input id=\"roster_form_search_button\" class=\"active\" type=\"button\" value=\""
+  buffer += "\" name=\"roster_form_search\" />\n					<input id=\"roster-search-button\" class=\"active\" type=\"button\" value=\""
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "roster_search_button", {"name":"translate","hash":{},"data":data})))
     + "\" name=\"roster_form:search_button\" />\n					<input id=\"roster_form_clear_button\" type=\"button\" value=\""
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "roster_clear_button", {"name":"translate","hash":{},"data":data})))

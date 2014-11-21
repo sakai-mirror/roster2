@@ -288,17 +288,17 @@ public class RosterPOIEntityProvider extends AbstractEntityProvider implements
 		return rosterMembers;
 	}
 	
-	private List<RosterMember> getEnrolledMembership(String siteId, String enrollmentSetId, String enrollmentStatus) {
+	private List<RosterMember> getEnrolledMembership(String siteId, String enrollmentSetId, String enrollmentStatusId) {
 
-		List<RosterMember> rosterMembers = sakaiProxy.getMembership(siteId, null, enrollmentSetId, enrollmentStatus);
+		List<RosterMember> rosterMembers = sakaiProxy.getMembership(siteId, null, enrollmentSetId, enrollmentStatusId);
 		
 		List<RosterMember> membersByStatus = null;
-		if (DEFAULT_ENROLLMENT_STATUS.equals(enrollmentStatus)) {
+		if (DEFAULT_ENROLLMENT_STATUS.equals(enrollmentStatusId)) {
 			membersByStatus = rosterMembers;
 		} else {
 			membersByStatus = new ArrayList<RosterMember>();
 			for (RosterMember rosterMember : rosterMembers) {
-				if (enrollmentStatus.equals(rosterMember.getEnrollmentStatus())) {
+				if (enrollmentStatusId.equals(rosterMember.getEnrollmentStatusId())) {
 					membersByStatus.add(rosterMember);
 				}
 			}
@@ -449,7 +449,7 @@ public class RosterPOIEntityProvider extends AbstractEntityProvider implements
 				row.add(member.getEmail());
 			}
 			
-			row.add(member.getEnrollmentStatus());
+			row.add(member.getEnrollmentStatusText());
 			row.add(member.getCredits());
 			
 			dataInRows.add(row);

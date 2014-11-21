@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -261,7 +262,7 @@ public class SakaiProxyImpl implements SakaiProxy {
 				"roster.display.userDisplayId", DEFAULT_VIEW_USER_DISPLAY_ID);
 	}
 	
-	public RosterMember getMember(String siteId, String userId) {
+	public RosterMember getMember(String siteId, String userId, String enrollmentSetId) {
 
         User user = null;
         try {
@@ -279,29 +280,39 @@ public class SakaiProxyImpl implements SakaiProxy {
             return null;
 		}
 
-		RosterMember rosterMember = new RosterMember(userId);
-		rosterMember.setEid(user.getEid());
+        if (enrollmentSetId != null) {
+            // Get the cache
+            Map<String, List<RosterMember>> membersMap = getAndCacheSortedEnrollmentSet(site, enrollmentSetId);
 
-        Member member = site.getMember(userId);
+            if (membersMap != null) {
+                List<RosterMember> members = membersMap.get(enrollmentSetId + "#all");
 
-		rosterMember.setDisplayId(member.getUserDisplayId());
-		rosterMember.setRole(member.getRole().getId());
+                members = filterMembers(site, getCurrentUserId(), members, null);
 
-		rosterMember.setEmail(user.getEmail());
-		rosterMember.setDisplayName(user.getDisplayName());
-		rosterMember.setSortName(user.getSortName());
+                if (members != null) {
+                    for (RosterMember member : members) {
+                        if (member.getUserId().equals(userId)) {
+                            return member;
+                        }
+                    }
+                }
+            } else {
+                log.error("Caching of enrollment set for site '" + siteId + "' and enrollmentset '" + enrollmentSetId + "' failed. Returning null ...");
+            }
 
-        Collection<Group> groups = site.getGroupsWithMember(userId);
+            return null;
+        } else {
+            // Get the unfiltered memberships
+            List<RosterMember> members = getAndCacheSortedMembership(site, null);
+            members = filterMembers(site, getCurrentUserId(), members, null);
+            for (RosterMember member : members) {
+                if (member.getUserId().equals(userId)) {
+                    return member;
+                }
+            }
 
-		for (Group group : groups) {
-			rosterMember.addGroup(group.getId(), group.getTitle());
-		}
-
-        if (connectionsLogic != null) {
-            rosterMember.setConnectionStatus(connectionsLogic
-                    .getConnectionStatus(getCurrentUserId(), userId));
+            return null;
         }
-        return rosterMember;
     }
 
 	public List<User> getSiteUsers(String siteId) {
@@ -319,8 +330,6 @@ public class SakaiProxyImpl implements SakaiProxy {
 	
 	public List<RosterMember> getMembership(String siteId, String groupId, String enrollmentSetId, String enrollmentStatus) {
 
-        String userId = getCurrentUserId();
-
 		Site site = null;
 		try {
 			site = siteService.getSite(siteId);
@@ -329,52 +338,13 @@ public class SakaiProxyImpl implements SakaiProxy {
             return null;
 		}
 
+        String currentUserId = getCurrentUserId();
+
         if (site.isType("course") && enrollmentSetId != null) {
-            return getEnrollmentMembership(siteId, enrollmentSetId, enrollmentStatus);
+            return getEnrollmentMembership(site, enrollmentSetId, enrollmentStatus, currentUserId);
         } else {
-            Cache cache = getCache(MEMBERSHIPS_CACHE);
-
-            List<RosterMember> rosterMembers = null;
-
-            String cacheKey = (groupId != null) ? groupId : siteId;
-
-            rosterMembers = (List<RosterMember>) cache.get(cacheKey);
-
-            if (rosterMembers == null) {
-                // Cache miss
-
-                // permissions are handled inside this method call
-                Set<Member> membership = getFilteredMembers(groupId, userId, site);
-                if (null == membership) {
-                    return null;
-                }
-
-                rosterMembers = new ArrayList<RosterMember>();
-
-                Map<String, User> userMap = getUserMap(membership);
-                Collection<Group> groups = site.getGroups();
-                for (Member member : membership) {
-                    try {
-                        RosterMember rosterMember = 
-                            getRosterMember(userMap, groups, member, site, userId);
-
-                        rosterMembers.add(rosterMember);
-                    } catch (UserNotDefinedException e) {
-                        log.warn("user not found: " + e.getId());
-                    }
-                }
-
-                if (rosterMembers.size() == 0) {
-                    return null;
-                }
-
-                // Sort it
-                Collections.sort(rosterMembers, memberComparator);
-
-                // Cache it
-                cache.put(cacheKey, rosterMembers);
-            }
-
+            List<RosterMember> rosterMembers = getAndCacheSortedMembership(site, groupId);
+            rosterMembers = filterMembers(site, currentUserId, rosterMembers, groupId);
             return rosterMembers;
         }
 	}
@@ -400,33 +370,18 @@ public class SakaiProxyImpl implements SakaiProxy {
         return userMap;
     }
 		
-	private Map<String, RosterMember> getMembershipMapped(String siteId,
-			String groupId, boolean filtered) {
+    /**
+     * @return A mapping of RosterMember onto eid
+     */
+	private Map<String, RosterMember> getMembershipMapped(Site site, String groupId) {
 
 		Map<String, RosterMember> rosterMembers = new HashMap<String, RosterMember>();
 
-		Site site = null;
-		try {
-			site = siteService.getSite(siteId);
-		} catch (IdUnusedException e) {
-			log.warn("site not found: " + e.getId());
-		}
-
-		if (null == site) {
-			return null;
-		}
-
         String userId = getCurrentUserId();
 
-		// permissions are handled inside this method call
-		Set<Member> membership = null;
-		if (true == filtered) {
-			membership = getFilteredMembers(groupId, userId, site);
-		} else {
-			membership = getUnfilteredMembers(groupId, userId, site);
-		}
+		Set<Member> membership = getUnfilteredMembers(groupId, site);
 		
-		if (null == membership) {
+		if (membership == null) {
 			return null;
 		}
 
@@ -434,7 +389,7 @@ public class SakaiProxyImpl implements SakaiProxy {
 		Collection<Group> groups = site.getGroups();
 		for (Member member : membership) {
 			try {
-				RosterMember rosterMember = getRosterMember(userMap, groups, member, site, userId);
+				RosterMember rosterMember = getRosterMember(userMap, groups, member, site);
 				rosterMembers.put(rosterMember.getEid(), rosterMember);
 			} catch (UserNotDefinedException e) {
 				log.warn("user not found: " + e.getId());
@@ -444,49 +399,38 @@ public class SakaiProxyImpl implements SakaiProxy {
 		return rosterMembers;
 	}
 
-	private Set<Member> getFilteredMembers(String groupId, String currentUserId, Site site) {
+    private List<RosterMember> filterMembers(Site site, String currentUserId, List<RosterMember> unfiltered, String groupId) {
 
-		Set<Member> membership = new HashSet<Member>();
+        List<RosterMember> filtered = new ArrayList<RosterMember>();
 
 		if (isAllowed(currentUserId, RosterFunctions.ROSTER_FUNCTION_VIEWALL, site.getReference())) {
-
-			if (null == groupId) {
-				// get all members
-				membership.addAll(filterHiddenMembers(site.getMembers(),
-						currentUserId, site.getId(), site));
-			} else if (null != site.getGroup(groupId)) {
-				// get all members of requested groupId
-				membership.addAll(filterHiddenMembers(site.getGroup(groupId)
-						.getMembers(), currentUserId, site.getId(), site
-						.getGroup(groupId)));
-			} else {
-				// assume invalid groupId specified
-				return null;
-			}
-
-		} else {
-			if (null == groupId) {
+			if (groupId == null) {
+                filtered.addAll(filterHiddenMembers(unfiltered, currentUserId, site.getId(), site));
+            } else {
+                Group group = site.getGroup(groupId);
+                if (group != null) {
+                    // get all members of requested groupId
+                    filtered.addAll(filterHiddenMembers(unfiltered, currentUserId, site.getId(), group));
+                } else {
+                    // assume invalid groupId specified
+                    return null;
+                }
+            }
+        } else {
+			if (groupId == null) {
 				// get all members of groups current user is allowed to view
 				for (Group group : site.getGroups()) {
-
-					if (isAllowed(currentUserId,
-							RosterFunctions.ROSTER_FUNCTION_VIEWGROUP, group.getReference())) {
-
-						membership.addAll(filterHiddenMembers(group
-								.getMembers(), currentUserId, site.getId(),
-								group));
+					if (isAllowed(currentUserId, RosterFunctions.ROSTER_FUNCTION_VIEWGROUP, group.getReference())) {
+						filtered.addAll(filterHiddenMembers(unfiltered, currentUserId, site.getId(), group));
 					}
 				}
 			} else if (null != site.getGroup(groupId)) {
 				// get all members of requested groupId if current user is
 				// member
+                Group group = site.getGroup(groupId);
 				if (isAllowed(currentUserId,
-						RosterFunctions.ROSTER_FUNCTION_VIEWGROUP, site
-								.getGroup(groupId).getReference())) {
-
-					membership.addAll(filterHiddenMembers(site
-							.getGroup(groupId).getMembers(), currentUserId,
-							site.getId(), site.getGroup(groupId)));
+						RosterFunctions.ROSTER_FUNCTION_VIEWGROUP, group.getReference())) {
+					filtered.addAll(filterHiddenMembers(unfiltered, currentUserId, site.getId(), group));
 				}
 			} else {
 				// assume invalid groupId specified or user not member
@@ -494,45 +438,55 @@ public class SakaiProxyImpl implements SakaiProxy {
 			}
 		}
 		
-		if(log.isDebugEnabled()) log.debug("membership.size(): " + membership.size());
+		if (log.isDebugEnabled()) log.debug("membership.size(): " + filtered.size());
 		
 		//remove duplicates. Yes, its a Set but there can be dupes because its storing objects and from multiple groups.
 		Set<String> check = new HashSet<String>();
-		Set<Member> cleanedMembers = new HashSet<Member>();
-		for (Member m : membership) {
-			if(check.add(m.getUserId())) {
+		List<RosterMember> cleanedMembers = new ArrayList<RosterMember>();
+		for (RosterMember m : filtered) {
+			if (check.add(m.getUserId())) {
 				cleanedMembers.add(m);
+                // Now strip out any unauthorised info
+                if (!isAllowed(currentUserId, RosterFunctions.ROSTER_FUNCTION_VIEWEMAIL, site.getReference())) {
+                    m.setEmail(null);
+                }
 			}
 		}
 		
-		if(log.isDebugEnabled()) log.debug("cleanedMembers.size(): " + cleanedMembers.size());
+		if (log.isDebugEnabled()) log.debug("cleanedMembers.size(): " + cleanedMembers.size());
 
 		return cleanedMembers;
-	}
-	
-	@SuppressWarnings("unchecked")
-	private Set<Member> filterHiddenMembers(Set<Member> membership,
+    }
+
+    @SuppressWarnings("unchecked")
+	private List<RosterMember> filterHiddenMembers(List<RosterMember> members,
 			String currentUserId, String siteId, AuthzGroup authzGroup) {
 
-		if(log.isDebugEnabled()) log.debug("filterHiddenMembers");
+		log.debug("filterHiddenMembers");
 		
 		if (isAllowed(currentUserId,
 				RosterFunctions.ROSTER_FUNCTION_VIEWHIDDEN, authzGroup.getReference())) {
-
-			if(log.isDebugEnabled()) log.debug("permission to view all, including hidden");
-
-			return membership;
+			log.debug("permission to view all, including hidden");
+			return members;
 		}
 
-		Set<Member> filteredMembership = new HashSet<Member>();
+		List<RosterMember> filtered = new ArrayList<RosterMember>();
 		
 		Set<String> userIds = new HashSet<String>();
-		for (Member member : membership) {
-			userIds.add(member.getUserEid());
+
+		for (Iterator<RosterMember> i = members.iterator(); i.hasNext(); ) {
+            RosterMember member = i.next();
+
+			userIds.add(member.getEid());
+
+            // If this member is not in the authzGroup, remove them.
+            if (authzGroup.getMember(member.getUserId()) == null) {
+                i.remove();
+            }
 		}
 
-		Set<String> hiddenUserIds = privacyManager.findHidden(
-				"/site/" + siteId, userIds);
+		Set<String> hiddenUserIds
+            = privacyManager.findHidden("/site/" + siteId, userIds);
 
 		//get the list of visible roles, optional config.
 		//if set, the only users visible in the tool will be those with their role defined in this list
@@ -540,38 +494,37 @@ public class SakaiProxyImpl implements SakaiProxy {
 		
 		boolean filterRoles = ArrayUtils.isNotEmpty(visibleRoles);
 
-		if(log.isDebugEnabled()) log.debug("visibleRoles: " + ArrayUtils.toString(visibleRoles));
-		if(log.isDebugEnabled()) log.debug("filterRoles: " + filterRoles);
+		if (log.isDebugEnabled()) log.debug("visibleRoles: " + ArrayUtils.toString(visibleRoles));
+		if (log.isDebugEnabled()) log.debug("filterRoles: " + filterRoles);
 		
 		// determine filtered membership
-		for (Member member : membership) {
+		for (RosterMember member : members) {
 			
 			// skip if privacy restricted
-			if (hiddenUserIds.contains(member.getUserEid())) {
+			if (hiddenUserIds.contains(member.getEid())) {
 				continue;
 			}
 			
 			// now filter out users based on their role
-			if(filterRoles) {
-				String memberRoleId = member.getRole().getId();
-				if(ArrayUtils.contains(visibleRoles, memberRoleId)){
-					filteredMembership.add(member);
-					if(log.isDebugEnabled()) log.debug("Filter added: " + member.getUserEid());
+			if (filterRoles) {
+				String memberRoleId = member.getRole();
+				if (ArrayUtils.contains(visibleRoles, memberRoleId)){
+					filtered.add(member);
+					if (log.isDebugEnabled()) log.debug("Filter added: " + member.getEid());
 				}
 			} else {
-				if(log.isDebugEnabled()) log.debug("Added: " + member.getUserEid());
-				filteredMembership.add(member);
+				if (log.isDebugEnabled()) log.debug("Added: " + member.getEid());
+				filtered.add(member);
 			}
-			
 		}
 		
-		if(log.isDebugEnabled()) log.debug("filteredMembership.size(): " + filteredMembership.size());
+		if(log.isDebugEnabled()) log.debug("filteredMembership.size(): " + filtered.size());
 		
-		return filteredMembership;
+		return filtered;
 	}
+
 	
-	private Set<Member> getUnfilteredMembers(String groupId,
-			String currentUserId, Site site) {
+	private Set<Member> getUnfilteredMembers(String groupId, Site site) {
 		
 		Set<Member> membership = new HashSet<Member>();
 
@@ -590,8 +543,8 @@ public class SakaiProxyImpl implements SakaiProxy {
 		return membership;
 	}
 	
-	private RosterMember getRosterMember(Map<String, User> userMap, Collection<Group> groups, Member member, Site site,
-			String currentUserId) throws UserNotDefinedException {
+	private RosterMember getRosterMember(Map<String, User> userMap, Collection<Group> groups, Member member, Site site)
+        throws UserNotDefinedException {
 
 		String userId = member.getUserId();
 
@@ -632,72 +585,166 @@ public class SakaiProxyImpl implements SakaiProxy {
 	 * @return the enrollment set members for the specified site and enrollment
 	 *         set.
 	 */
-	private List<RosterMember> getEnrollmentMembership(String siteId, String enrollmentSetId, String enrollmentStatus) {
+	private List<RosterMember> getEnrollmentMembership(Site site, String enrollmentSetId, String enrollmentStatusId, String currentUserId) {
 
-		Site site = null;
-		try {
-			site = siteService.getSite(siteId);
-		} catch (IdUnusedException e) {
-			log.warn("site not found: " + e.getId());
-		}
-
-		if (null == site) {
+		if (site == null) {
 			return null;
 		}
 
-		if (!isAllowed(getCurrentUserId(),
-				RosterFunctions.ROSTER_FUNCTION_VIEWENROLLMENTSTATUS, site.getReference())) {
-
+		if (!isAllowed(currentUserId, RosterFunctions.ROSTER_FUNCTION_VIEWENROLLMENTSTATUS, site.getReference())) {
 			return null;
 		}
+
+        Map<String, List<RosterMember>> membersMap = getAndCacheSortedEnrollmentSet(site, enrollmentSetId);
+
+        String key = (enrollmentStatusId == null) ? enrollmentSetId + "#all" : enrollmentSetId + "#" + enrollmentStatusId;
+
+        if (log.isDebugEnabled()) {
+            log.debug("Trying to get members list " + key + " from membersMap ...");
+        }
+
+        List<RosterMember> members = membersMap.get(key);
+
+        if (members != null) {
+            return filterMembers(site, currentUserId, members, null);
+        } else {
+            log.error("No enrollment set");
+            return null;
+        }
+	}
+
+    /**
+     *  Tries to retrieve the sorted list of members for the supplied site and
+     *  group. If there is no entry, the entire site and group membership is
+     *  cached and the requested list is returned. IT IS THE CALLER'S
+     *  RESPONSIBILITY TO FILTER ON AUTHZ RULES.
+     */
+    private List<RosterMember> getAndCacheSortedMembership(Site site, String groupId) {
+
+        String siteId = site.getId();
+
+        Cache cache = getCache(MEMBERSHIPS_CACHE);
+
+        String key = (groupId == null) ? siteId : groupId;
+
+        List<RosterMember> siteMembers = (List<RosterMember>) cache.get(key);
+
+        if (siteMembers != null) {
+            return siteMembers;
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Cache miss on '" + key + "'.");
+            }
+
+            Set<Member> membership = site.getMembers();
+
+            if (null == membership) {
+                return null;
+            }
+
+            Map<String, User> userMap = getUserMap(membership);
+
+            siteMembers = new ArrayList<RosterMember>();
+
+            Collection<Group> groups = site.getGroups();
+
+            for (Group group : groups) {
+                cache.put(group.getId(), new ArrayList<RosterMember>());
+            }
+
+            for (Member member : membership) {
+                try {
+                    RosterMember rosterMember = 
+                        getRosterMember(userMap, groups, member, site);
+
+                    siteMembers.add(rosterMember);
+
+                    for (String memberGroupId : rosterMember.getGroups().keySet()) {
+                        List<RosterMember> groupMembers = (List<RosterMember>) cache.get(memberGroupId);
+                        groupMembers.add(rosterMember);
+                    }
+                } catch (UserNotDefinedException e) {
+                    log.warn("user not found: " + e.getId());
+                }
+            }
+
+            // Sort the groups. They're already cached.
+            for (Group group : groups) {
+                Collections.sort((List<RosterMember>) cache.get(group.getId()), memberComparator);
+            }
+
+            // Sort the main site list
+            Collections.sort(siteMembers, memberComparator);
+
+            if (log.isDebugEnabled()) {
+                log.debug("Caching on '" + siteId + "' ...");
+            }
+
+            // Cache the main site list
+            cache.put(siteId, siteMembers);
+
+            return siteMembers;
+        }
+    }
+
+    /**
+     *  Tries to retrieve the members map for the supplied site. If there is no
+     *  map yet for the site, it is created. If the members map doesn't contain
+     *  the three lists for the specified enrollment set, #all, #wait, and
+     *  #enrolled, the entire enrollment set is retrieved and cached into those
+     *  three sections, pre-sorted. Finally, the entire site's members map is
+     *  returned and the caller can pull the bits they want. IT IS THE CALLER'S
+     *  RESPONSIBILITY TO FILTER ON AUTHZ RULES.
+     */
+    private Map<String, List<RosterMember>> getAndCacheSortedEnrollmentSet(Site site, String enrollmentSetId) {
+
+        String siteId = site.getId();
 
         Cache cache = getCache(ENROLLMENTS_CACHE);
+
+        if (log.isDebugEnabled()) {
+            log.debug("Trying to get '" + siteId + "' from enrollments cache ...");
+        }
 
         Map<String, List<RosterMember>> membersMap = (Map<String, List<RosterMember>>) cache.get(siteId);
 
         if (membersMap == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Cache miss. Putting empty membersMap on " + siteId + " ...");
+            }
             membersMap = new HashMap<String, List<RosterMember>>();
             cache.put(siteId, membersMap);
         }
 
-        Map<String, String> statusCodes = courseManagementService.getEnrollmentStatusDescriptions(new ResourceLoader().getLocale());
-
-        String requestedEnrollmentStatusId = null;
-
-        if (enrollmentStatus != null) {
-            for (String id : statusCodes.keySet()) {
-                if (statusCodes.get(id).equals(enrollmentStatus)) {
-                    requestedEnrollmentStatusId = id;
-                }
+        if (membersMap.containsKey(enrollmentSetId + "#all")
+                && membersMap.containsKey(enrollmentSetId + "#wait")
+                && membersMap.containsKey(enrollmentSetId + "#enrolled")) {
+            if (log.isDebugEnabled()) {
+                log.debug("Cache hit on '" + enrollmentSetId + "'");
             }
-        }
+            return membersMap;
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Cache miss on '" + enrollmentSetId + "'");
+            }
+            EnrollmentSet enrollmentSet = courseManagementService.getEnrollmentSet(enrollmentSetId);
 
-        String key = (requestedEnrollmentStatusId == null) ? enrollmentSetId : enrollmentSetId + "#" + requestedEnrollmentStatusId;
+            if (null == enrollmentSet) {
+                return null;
+            }
 
-        List<RosterMember> enrolledMembers = membersMap.get(key);
+		    Map<String, RosterMember> membership = getMembershipMapped(site, null);
 
-        if (enrolledMembers == null) {
-
-            // Not in the cache yet.
-
-		    EnrollmentSet enrollmentSet = courseManagementService.getEnrollmentSet(enrollmentSetId);
-
-		    if (null == enrollmentSet) {
-			    return null;
-		    }
-
-		    Map<String, RosterMember> membership = getMembershipMapped(siteId, null, false);
-
-		    enrolledMembers = new ArrayList<RosterMember>();
-
+            List<RosterMember> members = new ArrayList<RosterMember>();
             List<RosterMember> waiting = new ArrayList<RosterMember>();
             List<RosterMember> enrolled = new ArrayList<RosterMember>();
 
-		    for (Enrollment enrollment : courseManagementService.getEnrollments(enrollmentSet.getEid())) {
-			    RosterMember member = membership.get(enrollment.getUserId());
-			    member.setCredits(enrollment.getCredits());
-			    String enrollmentStatusId = enrollment.getEnrollmentStatus();
-			    member.setEnrollmentStatus(statusCodes.get(enrollmentStatusId));
+            for (Enrollment enrollment : courseManagementService.getEnrollments(enrollmentSet.getEid())) {
+                RosterMember member = membership.get(enrollment.getUserId());
+                member.setCredits(enrollment.getCredits());
+                String enrollmentStatusId = enrollment.getEnrollmentStatus();
+                member.setEnrollmentStatusId(enrollmentStatusId);
+                //member.setEnrollmentStatus(statusCodes.get(enrollmentStatusId));
 
                 if (enrollmentStatusId.equals("wait")) {
                     waiting.add(member);
@@ -705,24 +752,26 @@ public class SakaiProxyImpl implements SakaiProxy {
                     enrolled.add(member);
                 }
 
-			    enrolledMembers.add(member);
-		    }
-
-            if (0 == enrolledMembers.size()) {
-                // to avoid IndexOutOfBoundsException in EB code
-                return null;
+                members.add(member);
             }
 
-            Collections.sort(enrolledMembers, memberComparator);
+            Collections.sort(members, memberComparator);
+            Collections.sort(waiting, memberComparator);
+            Collections.sort(enrolled, memberComparator);
 
-            // Cache them
-            membersMap.put(enrollmentSetId, enrolledMembers);
+            if (log.isDebugEnabled()) {
+                log.debug("Caching all enrollment set members on '" + enrollmentSetId + "#all' ...");
+                log.debug("Caching watlisted members on '" + enrollmentSetId + "#wait' ...");
+                log.debug("Caching enrolled members on '" + enrollmentSetId + "#enrolled' ...");
+            }
+
+            membersMap.put(enrollmentSetId + "#all", members);
             membersMap.put(enrollmentSetId + "#wait", waiting);
             membersMap.put(enrollmentSetId + "#enrolled", enrolled);
-        }
 
-		return enrolledMembers;
-	}
+            return membersMap;
+        }
+    }
 	
 	/**
 	 * {@inheritDoc}
@@ -790,8 +839,7 @@ public class SakaiProxyImpl implements SakaiProxy {
 				.getEnrollmentStatusDescriptions(new ResourceLoader()
 						.getLocale());
 
-		rosterSite.setEnrollmentStatusDescriptions(new ArrayList<String>(
-				statusCodes.values()));
+		rosterSite.setEnrollmentStatusCodes(statusCodes);
 
 		if (null == groupProvider) {
 			log.warn("no group provider installed");

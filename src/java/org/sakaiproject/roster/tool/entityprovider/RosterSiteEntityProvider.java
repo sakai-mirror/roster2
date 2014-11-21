@@ -170,9 +170,14 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 			throw new EntityException("No user id supplied", reference.getReference());
 		}
 
+		String enrollmentSetId = null;
+		if (parameters != null && parameters.containsKey(KEY_ENROLLMENT_SET_ID)) {
+			enrollmentSetId = parameters.get(KEY_ENROLLMENT_SET_ID).toString();
+		}
+
 		List<RosterMember> membership = new ArrayList<RosterMember>();
 
-        RosterMember member = sakaiProxy.getMember(siteId, userId);
+        RosterMember member = sakaiProxy.getMember(siteId, userId, enrollmentSetId);
 		
 		if (null == member) {
 			throw new EntityException("Unable to retrieve membership", reference.getReference());
