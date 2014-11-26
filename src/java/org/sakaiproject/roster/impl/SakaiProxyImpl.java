@@ -328,7 +328,11 @@ public class SakaiProxyImpl implements SakaiProxy {
         return userDirectoryService.getUsers(site.getUsers());
     }
 	
-	public List<RosterMember> getMembership(String siteId, String groupId, String roleId, String enrollmentSetId, String enrollmentStatus) {
+	public List<RosterMember> getMembership(String currentUserId, String siteId, String groupId, String roleId, String enrollmentSetId, String enrollmentStatus) {
+
+        if (currentUserId == null) {
+            return null;
+        }
 
 		Site site = null;
 		try {
@@ -337,8 +341,6 @@ public class SakaiProxyImpl implements SakaiProxy {
 			log.error("Site '" + siteId + "' not found. Returning null ...");
             return null;
 		}
-
-        String currentUserId = getCurrentUserId();
 
         if (site.isType("course") && enrollmentSetId != null) {
             return getEnrollmentMembership(site, enrollmentSetId, enrollmentStatus, currentUserId);
@@ -625,9 +627,13 @@ public class SakaiProxyImpl implements SakaiProxy {
 
         Cache cache = getCache(MEMBERSHIPS_CACHE);
 
-        String key = (groupId == null) ? siteId : groupId;
+        String key = siteId;
 
-        if (groupId == null && roleId != null) {
+        if (groupId != null) {
+            key += "#" + groupId;
+        }
+
+        if(roleId != null) {
             key += "#" + roleId;
         }
 
@@ -658,14 +664,19 @@ public class SakaiProxyImpl implements SakaiProxy {
             siteMembers = new ArrayList<RosterMember>();
 
             Collection<Group> groups = site.getGroups();
+            Set<Role> roles = site.getRoles();
 
-            // Precache an empty list for each group
+            // Precache an empty list for each site#group and each site#group#role
             for (Group group : groups) {
-                cache.put(group.getId(), new ArrayList<RosterMember>());
+                String gId = group.getId();
+                cache.put(siteId + "#" + gId, new ArrayList<RosterMember>());
+                for (Role role : roles) {
+                    cache.put(siteId + "#" + gId + "#" + role.getId(), new ArrayList<RosterMember>());
+                }
             }
 
-            // Same for site role
-            for (Role role : site.getRoles()) {
+            // Same for site#role
+            for (Role role : roles) {
                 cache.put(siteId + "#" + role.getId(), new ArrayList<RosterMember>());
             }
 
@@ -676,12 +687,16 @@ public class SakaiProxyImpl implements SakaiProxy {
 
                     siteMembers.add(rosterMember);
 
+                    String memberRoleId = rosterMember.getRole();
+
                     for (String memberGroupId : rosterMember.getGroups().keySet()) {
-                        List<RosterMember> groupMembers = (List<RosterMember>) cache.get(memberGroupId);
+                        List<RosterMember> groupMembers = (List<RosterMember>) cache.get(siteId + "#" + memberGroupId);
                         groupMembers.add(rosterMember);
+
+                        List<RosterMember> groupRoleMembers = (List<RosterMember>) cache.get(siteId + "#" + memberGroupId + "#" + memberRoleId);
+                        groupRoleMembers.add(rosterMember);
                     }
 
-                    String memberRoleId = rosterMember.getRole();
                     List<RosterMember> roleMembers = (List<RosterMember>) cache.get(siteId + "#" + memberRoleId);
                     roleMembers.add(rosterMember);
                 } catch (UserNotDefinedException e) {
@@ -691,7 +706,11 @@ public class SakaiProxyImpl implements SakaiProxy {
 
             // Sort the groups. They're already cached.
             for (Group group : groups) {
-                Collections.sort((List<RosterMember>) cache.get(group.getId()), memberComparator);
+                String gId = group.getId();
+                Collections.sort((List<RosterMember>) cache.get(siteId + "#" + gId), memberComparator);
+                for (Role role : roles) {
+                    Collections.sort((List<RosterMember>) cache.get(siteId + "#" + gId + "#" + role.getId()), memberComparator);
+                }
             }
 
             // Sort the main site list
@@ -704,7 +723,7 @@ public class SakaiProxyImpl implements SakaiProxy {
             // Cache the main site list
             cache.put(siteId, siteMembers);
 
-            return siteMembers;
+            return (List<RosterMember>) cache.get(key);
         }
     }
 

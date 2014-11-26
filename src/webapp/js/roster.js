@@ -126,7 +126,7 @@
             roster.render('overview',
                 { siteGroups: roster.site.siteGroups,
                     membersTotal: roster.i18n.currently_displaying_participants.replace(/\{0\}/, roster.site.membersTotal),
-                    roleFragments: roster.getRoleFragments(),
+                    roleFragments: roster.getRoleFragments(roster.site.roleCounts),
                     roles: roster.site.userRoles,
                     viewOfficialPhoto: roster.currentUserPermissions.viewOfficialPhoto },
                 'roster_content');
@@ -328,7 +328,9 @@
                 url += "&groupId=" + roster.groupToView;
             } else if (roster.enrollmentSetToView) {
                 url += "&enrollmentSetId=" + roster.enrollmentSetToView;
-            } else if (roster.roleToView) {
+            }
+
+            if (roster.roleToView) {
                 url += "&roleId=" + roster.roleToView;
             }
         }
@@ -349,10 +351,24 @@
                 if (data.status && data.status === 'END') {
                     $(window).off('scroll.roster');
                     loadImage.hide();
+
+                    if (roster.nextPage === 0) {
+                        var membersTotalString = roster.i18n.currently_displaying_participants.replace(/\{0\}/, 0);
+                        $('#roster-members-total').html(membersTotalString);
+                        $('#roster-role-totals').html('');
+                    }
+
                     return;
                 }
 
-                var members = data['roster-membership_collection'];
+                var members = data.members;
+
+                if (roster.nextPage === 0) {
+                    var membersTotalString = roster.i18n.currently_displaying_participants.replace(/\{0\}/, data.membersTotal);
+                    $('#roster-members-total').html(membersTotalString);
+                    var roleFragments = roster.getRoleFragments(data.roleCounts);
+                    $('#roster-role-totals').html(roleFragments);
+                }
 
                 members.forEach(function (m) {
 
@@ -465,11 +481,11 @@
         }
     };
 
-    roster.getRoleFragments = function () {
+    roster.getRoleFragments = function (roleCounts) {
 
-        return Object.keys(roster.site.roleCounts).map(function (key) {
+        return Object.keys(roleCounts).map(function (key) {
 
-            var frag = roster.i18n.role_breakdown_fragment.replace(/\{0\}/, roster.site.roleCounts[key]);
+            var frag = roster.i18n.role_breakdown_fragment.replace(/\{0\}/, roleCounts[key]);
             return frag.replace(/\{1\}/, key);
         }).join();
     };

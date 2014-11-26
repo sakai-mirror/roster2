@@ -36,6 +36,7 @@ import org.sakaiproject.entitybroker.entityprovider.capabilities.Outputable;
 import org.sakaiproject.entitybroker.entityprovider.extension.Formats;
 import org.sakaiproject.entitybroker.exception.EntityException;
 import org.sakaiproject.entitybroker.util.AbstractEntityProvider;
+import org.sakaiproject.roster.api.RosterData;
 import org.sakaiproject.roster.api.RosterMember;
 import org.sakaiproject.roster.api.RosterMemberComparator;
 import org.sakaiproject.roster.api.SakaiProxy;
@@ -83,6 +84,12 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 	@EntityCustomAction(action = "get-membership", viewKey = EntityView.VIEW_SHOW)
 	public Object getMembership(EntityReference reference, Map<String, Object> parameters) {
 
+        String userId = developerHelperService.getCurrentUserId();
+
+        if (userId == null) {
+            throw new EntityException("You must be logged in to get the memberships", reference.getReference());
+        }
+
         String siteId = reference.getId();
 
 		if (null == siteId || DEFAULT_ID.equals(siteId)) {
@@ -124,7 +131,7 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 		}
 
 		List<RosterMember> membership
-            = sakaiProxy.getMembership(siteId, groupId, roleId, enrollmentSetId, enrollmentStatus);
+            = sakaiProxy.getMembership(userId, siteId, groupId, roleId, enrollmentSetId, enrollmentStatus);
 
 		if (null == membership) {
 			throw new EntityException("Unable to retrieve membership", reference.getReference());
@@ -154,7 +161,24 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 
 		    List<RosterMember> subList = membership.subList(start, end);
 
-		    return subList;
+            RosterData data = new RosterData();
+            data.setMembers(subList);
+            data.setMembersTotal(membershipsSize);
+
+            Map<String, Integer> roleCounts = new HashMap<String, Integer>();
+
+            for (RosterMember member : membership) {
+                String memberRoleId = member.getRole();
+                if (!roleCounts.containsKey(memberRoleId)) {
+                    roleCounts.put(memberRoleId, 1);
+                } else {
+                    roleCounts.put(memberRoleId, roleCounts.get(memberRoleId) + 1);
+                }
+            }
+
+            data.setRoleCounts(roleCounts);
+
+		    return data;
         }
 	}
 
@@ -191,7 +215,14 @@ public class RosterSiteEntityProvider extends AbstractEntityProvider implements
 
         membership.add(member);
 
-        return membership;
+        RosterData data = new RosterData();
+        data.setMembers(membership);
+        data.setMembersTotal(1);
+        Map<String, Integer> roleCounts = new HashMap<String, Integer>(1);
+        roleCounts.put(member.getRole(), 1);
+        data.setRoleCounts(roleCounts);
+
+        return data;
 	}
 			
 	@EntityCustomAction(action = "get-site", viewKey = EntityView.VIEW_SHOW)

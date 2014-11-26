@@ -657,9 +657,9 @@ templates['overview'] = template({"1":function(depth0,helpers,partials,data) {
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "roster_search_button", {"name":"translate","hash":{},"data":data})))
     + "\" name=\"roster_form:search_button\" />\n					<input id=\"roster_form_clear_button\" type=\"button\" value=\""
     + escapeExpression(((helpers.translate || (depth0 && depth0.translate) || helperMissing).call(depth0, "roster_clear_button", {"name":"translate","hash":{},"data":data})))
-    + "\" name=\"roster_form:clear_button\" />\n				</div>\n			</td>\n            <td>\n                <span class=\"instruction\">\n                    <div class=\"rosterRoleTopLine\">"
+    + "\" name=\"roster_form:clear_button\" />\n				</div>\n			</td>\n            <td>\n                <span class=\"instruction\">\n                    <div id=\"roster-members-total\" class=\"rosterRoleTopLine\">"
     + escapeExpression(((helper = (helper = helpers.membersTotal || (depth0 != null ? depth0.membersTotal : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"membersTotal","hash":{},"data":data}) : helper)))
-    + "</div>\n                    <div class=\"rosterRoleBottomLine\">("
+    + "</div>\n                    <div id=\"roster-role-totals\" class=\"rosterRoleBottomLine\">("
     + escapeExpression(((helper = (helper = helpers.roleFragments || (depth0 != null ? depth0.roleFragments : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"roleFragments","hash":{},"data":data}) : helper)))
     + ")</div>\n                </span>\n            </td>\n		</tr>\n	</tbody>\n</table>\n<div id=\"roster_type_selector\">\n";
   stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.viewOfficialPhoto : depth0), {"name":"if","hash":{},"fn":this.program(9, data),"inverse":this.noop,"data":data});

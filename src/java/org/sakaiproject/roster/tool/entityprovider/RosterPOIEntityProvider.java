@@ -132,13 +132,13 @@ public class RosterPOIEntityProvider extends AbstractEntityProvider implements
 	@EntityCustomAction(action = "export-to-excel", viewKey = EntityView.VIEW_SHOW)
 	public void exportToExcel(OutputStream out, EntityReference reference, Map<String, Object> parameters) {
 
-		HttpServletResponse response = requestGetter.getResponse();
+        String userId = developerHelperService.getCurrentUserId();
 
-		// user must be logged in
-		String userId = sakaiProxy.getCurrentUserId();
-		if (null == userId) {
-			throw new EntityException(MSG_NO_SESSION, reference.getReference());
-		}
+        if (userId == null) {
+            throw new EntityException(MSG_NO_SESSION, reference.getReference());
+        }
+
+		HttpServletResponse response = requestGetter.getResponse();
 
 		String siteId = reference.getId();
 		if (StringUtils.isBlank(siteId) || DEFAULT_ID.equals(siteId)) {
@@ -151,7 +151,7 @@ public class RosterPOIEntityProvider extends AbstractEntityProvider implements
 				if (null == site) {
 					throw new EntityException(MSG_UNABLE_TO_RETRIEVE_SITE, reference.getReference());
 				}
-				export(response, site, parameters);
+				export(userId, response, site, parameters);
 				
 			} else {
 				throw new EntityException(MSG_NO_EXPORT_PERMISSION, reference.getReference());
@@ -209,7 +209,7 @@ public class RosterPOIEntityProvider extends AbstractEntityProvider implements
 		return filename.toString();
 	}
 	
-	private void export(HttpServletResponse response, RosterSite site, Map<String, Object> parameters) throws IOException {
+	private void export(String currentUserId, HttpServletResponse response, RosterSite site, Map<String, Object> parameters) throws IOException {
 
 		// TODO one generic method could handle the parameters?
 		String groupId = getGroupIdValue(parameters);
@@ -241,14 +241,14 @@ public class RosterPOIEntityProvider extends AbstractEntityProvider implements
 
 		if (VIEW_OVERVIEW.equals(viewType)) {
 
-			List<RosterMember> rosterMembers = getMembership(site.getId(), groupId);
+			List<RosterMember> rosterMembers = getMembership(currentUserId, site.getId(), groupId);
 
 			if (null != rosterMembers) {
 				addOverviewRows(dataInRows, rosterMembers, header, site.getId());
 			}
 		} else if (VIEW_ENROLLMENT_STATUS.equals(viewType)) {
 
-			List<RosterMember> rosterMembers = getEnrolledMembership(site.getId(), enrollmentSetId, enrollmentStatus);
+			List<RosterMember> rosterMembers = getEnrolledMembership(currentUserId, site.getId(), enrollmentSetId, enrollmentStatus);
 
 			if (null != rosterMembers) {
 				addEnrollmentStatusRows(dataInRows, rosterMembers, header,
@@ -271,14 +271,14 @@ public class RosterPOIEntityProvider extends AbstractEntityProvider implements
 		response.getOutputStream().close();
 	}
 
-	private List<RosterMember> getMembership(String siteId, String groupId) {
+	private List<RosterMember> getMembership(String userId, String siteId, String groupId) {
 		
 		List<RosterMember> rosterMembers;
 		
 		if (DEFAULT_GROUP_ID.equals(groupId)) {
-			rosterMembers = sakaiProxy.getMembership(siteId, null, null, null, null);
+			rosterMembers = sakaiProxy.getMembership(userId, siteId, null, null, null, null);
 		} else {
-			rosterMembers = sakaiProxy.getMembership(siteId, groupId, null, null, null);
+			rosterMembers = sakaiProxy.getMembership(userId, siteId, groupId, null, null, null);
 		}
 		
 		if (null == rosterMembers) {
@@ -288,9 +288,9 @@ public class RosterPOIEntityProvider extends AbstractEntityProvider implements
 		return rosterMembers;
 	}
 	
-	private List<RosterMember> getEnrolledMembership(String siteId, String enrollmentSetId, String enrollmentStatusId) {
+	private List<RosterMember> getEnrolledMembership(String currentUserId, String siteId, String enrollmentSetId, String enrollmentStatusId) {
 
-		List<RosterMember> rosterMembers = sakaiProxy.getMembership(siteId, null, null, enrollmentSetId, enrollmentStatusId);
+		List<RosterMember> rosterMembers = sakaiProxy.getMembership(currentUserId, siteId, null, null, enrollmentSetId, enrollmentStatusId);
 		
 		List<RosterMember> membersByStatus = null;
 		if (DEFAULT_ENROLLMENT_STATUS.equals(enrollmentStatusId)) {
