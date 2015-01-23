@@ -359,21 +359,49 @@
                     
                     roster.render('group_section_filter', {}, 'roster_section_filter');
 
+                    //Keeps track of all members found by index
+                    foundmembers = [];
+
                     roster.site.siteGroups.forEach(function (group) {
 
                         group.members = [];
 
                         group.userIds.forEach(function (userId) {
 
-                            siteMembers.some(function (siteMember) {
+                            siteMembers.some(function (siteMember, index) {
 
                                 if (siteMember.userId === userId) {
                                     group.members.push(siteMember);
+                                    foundmembers.push(index)
                                     return true;
                                 }
                             });
+
                         });
                     });
+
+                    //Filter out the found elements from member
+                    siteMembersNotGrouped = $.extend(true,[],siteMembers)
+                    foundmembers.forEach(function (memberindex) {
+                        delete siteMembersNotGrouped[memberindex]
+                    })
+
+                    //Clean up the array
+                    siteMembersNotGrouped = siteMembersNotGrouped.filter(function(n){return n !== undefined;});
+
+                    participants = roster.i18n.currently_displaying_participants.replace(/\{0\}/, siteMembersNotGrouped.length);
+                    siteNotGrouped = {
+                        id: "not_grouped", 
+                        members: siteMembersNotGrouped, 
+                        participants: participants,
+                        title: roster.i18n.roster_group_notgrouped,
+                        //Maybe figure this out if really necessary by looping through the members and looking at their roles
+                        roles: {}
+                    }
+
+                    if (roster.site.siteGroups) {
+                      roster.site.siteGroups.push(siteNotGrouped);
+                    }
 
                     roster.render('grouped',
                             { 'language': roster.language,
@@ -673,19 +701,22 @@
 
             members.forEach(function (member) {
                 
-                group.userIds.forEach(function (userId) {
+                if (group.userIds) {
 
-                    if (member.userId === userId) {
-                        
-                        var role = member.role;
-                        
-                        if (undefined === group.roles[role]) {
-                            group.roles[role] = { roleType: role, count: 0 };
-                        }
+                  group.userIds.forEach(function (userId) {
 
-                        group.roles[role].count += 1;
-                    }
-                });
+                      if (member.userId === userId) {
+                          
+                          var role = member.role;
+                          
+                          if (undefined === group.roles[role]) {
+                              group.roles[role] = { roleType: role, count: 0 };
+                          }
+
+                          group.roles[role].count += 1;
+                      }
+                  });
+              }
             });
 
             return group;
@@ -700,6 +731,10 @@
 
             var roleIds = Object.keys(group.roles);
             var numberOfRoles = roleIds.length;
+
+            //Quick break
+            if (numberOfRoles == 0)
+              return group;
             
             var participantsCount = 0;
             var roleNumber = 1;
@@ -1156,7 +1191,7 @@
     Handlebars.registerHelper('translate', function (key) {
         var t = roster.i18n[key];
         if (key === 'title_msg') {
-            console.log('VAL:' + t);
+            //console.log('VAL:' + t);
         }
         return roster.i18n[key];
     });
