@@ -366,18 +366,17 @@
 
                         group.members = [];
 
-                        group.userIds.forEach(function (userId) {
-
-                            siteMembers.some(function (siteMember, index) {
-
-                                if (siteMember.userId === userId) {
-                                    group.members.push(siteMember);
-                                    foundmembers.push(index)
-                                    return true;
-                                }
-                            });
-
-                        });
+                        if ("userIds" in group) {
+                          group.userIds.forEach(function (userId) {
+                              siteMembers.some(function (siteMember, index) {
+                                  if (siteMember.userId === userId) {
+                                      group.members.push(siteMember);
+                                      foundmembers.push(index)
+                                      return true;
+                                  }
+                              });
+                          });
+                        }
                     });
 
                     //Filter out the found elements from member
