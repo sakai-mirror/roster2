@@ -363,52 +363,57 @@
                    foundmembers = [];
 
                    if (roster.site.siteGroups) {
-                     roster.site.siteGroups.sort(function(a,b) {
-                        var x = a.title.toLowerCase();
-                        var y = b.title.toLowerCase();
-                        return x < y ? -1 : x > y ? 1 : 0;
-                     })
+                     //If this is undefined for false (for some reason), process it
+                     if (!roster.processedGroups) {
+                       roster.site.siteGroups.sort(function(a,b) {
+                          var x = a.title.toLowerCase();
+                          var y = b.title.toLowerCase();
+                          return x < y ? -1 : x > y ? 1 : 0;
+                       })
 
-                     roster.site.siteGroups.forEach(function (group) {
+                       roster.site.siteGroups.forEach(function (group) {
 
-                          group.members = [];
+                            group.members = [];
 
-                          if ("userIds" in group) {
-                            group.userIds.forEach(function (userId) {
-                                siteMembers.some(function (siteMember, index) {
-                                    if (siteMember.userId === userId) {
-                                        group.members.push(siteMember);
-                                        foundmembers.push(index)
-                                        return true;
-                                    }
-                                });
-                            });
-                          }
-                      });
-                    }
+                            if ("userIds" in group) {
+                              group.userIds.forEach(function (userId) {
+                                  siteMembers.some(function (siteMember, index) {
+                                      if (siteMember.userId === userId) {
+                                          group.members.push(siteMember);
+                                          foundmembers.push(index)
+                                          return true;
+                                      }
+                                  });
+                              });
+                            }
+                        });
 
 
-                    //Filter out the found elements from member
-                    siteMembersNotGrouped = $.extend(true,[],siteMembers)
-                    foundmembers.forEach(function (memberindex) {
-                        delete siteMembersNotGrouped[memberindex]
-                    })
+                      //Filter out the found elements from member
+                      siteMembersNotGrouped = $.extend(true,[],siteMembers)
+                      foundmembers.forEach(function (memberindex) {
+                          delete siteMembersNotGrouped[memberindex]
+                      })
 
-                    //Clean up the array
-                    siteMembersNotGrouped = siteMembersNotGrouped.filter(function(n){return n !== undefined;});
+                      //Clean up the array
+                      siteMembersNotGrouped = siteMembersNotGrouped.filter(function(n){return n !== undefined;});
 
-                    participants = roster.i18n.currently_displaying_participants.replace(/\{0\}/, siteMembersNotGrouped.length);
-                    siteNotGrouped = {
-                        id: "not_grouped", 
-                        members: siteMembersNotGrouped, 
-                        participants: participants,
-                        title: roster.i18n.roster_group_unassigned,
-                        //Maybe figure this out if really necessary by looping through the members and looking at their roles
-                        roles: {}
-                    }
+                      participants = roster.i18n.currently_displaying_participants.replace(/\{0\}/, siteMembersNotGrouped.length);
+                      siteNotGrouped = {
+                          id: "not_grouped", 
+                          members: siteMembersNotGrouped, 
+                          participants: participants,
+                          title: roster.i18n.roster_group_unassigned,
+                          //Maybe figure this out if really necessary by looping through the members and looking at their roles
+                          roles: {}
+                      }
 
-                    if (roster.site.siteGroups) {
-                      roster.site.siteGroups.push(siteNotGrouped);
+                      if (roster.site.siteGroups) {
+                        roster.site.siteGroups.push(siteNotGrouped);
+                      }
+
+                      roster.processedGroups = true;
+                      }
                     }
 
                     roster.render('grouped',
