@@ -359,25 +359,34 @@
                     
                     roster.render('group_section_filter', {}, 'roster_section_filter');
 
-                    //Keeps track of all members found by index
-                    foundmembers = [];
+                   //Keeps track of all members found by index
+                   foundmembers = [];
 
-                    roster.site.siteGroups.forEach(function (group) {
+                   if (roster.site.siteGroups) {
+                     roster.site.siteGroups.sort(function(a,b) {
+                        var x = a.title.toLowerCase();
+                        var y = b.title.toLowerCase();
+                        return x < y ? -1 : x > y ? 1 : 0;
+                     })
 
-                        group.members = [];
+                     roster.site.siteGroups.forEach(function (group) {
 
-                        if ("userIds" in group) {
-                          group.userIds.forEach(function (userId) {
-                              siteMembers.some(function (siteMember, index) {
-                                  if (siteMember.userId === userId) {
-                                      group.members.push(siteMember);
-                                      foundmembers.push(index)
-                                      return true;
-                                  }
-                              });
-                          });
-                        }
-                    });
+                          group.members = [];
+
+                          if ("userIds" in group) {
+                            group.userIds.forEach(function (userId) {
+                                siteMembers.some(function (siteMember, index) {
+                                    if (siteMember.userId === userId) {
+                                        group.members.push(siteMember);
+                                        foundmembers.push(index)
+                                        return true;
+                                    }
+                                });
+                            });
+                          }
+                      });
+                    }
+
 
                     //Filter out the found elements from member
                     siteMembersNotGrouped = $.extend(true,[],siteMembers)
@@ -393,7 +402,7 @@
                         id: "not_grouped", 
                         members: siteMembersNotGrouped, 
                         participants: participants,
-                        title: roster.i18n.roster_group_notgrouped,
+                        title: roster.i18n.roster_group_unassigned,
                         //Maybe figure this out if really necessary by looping through the members and looking at their roles
                         roles: {}
                     }
