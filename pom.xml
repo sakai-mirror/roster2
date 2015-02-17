@@ -25,7 +25,25 @@
         <yuicompressor.plugin.version>1.2</yuicompressor.plugin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-
+    <profiles>
+        <profile>
+            <id>sakai-2.9</id>
+            <properties>
+                <sakai.lombok.version>1.12.4</sakai.lombok.version>
+            </properties>
+            <dependencyManagement>
+              <dependencies>
+                <dependency>
+                  <!-- To keep make it easy to update all tool versions -->
+                  <groupId>org.projectlombok</groupId>
+                  <artifactId>lombok</artifactId>
+                  <version>${sakai.lombok.version}</version>
+                  <scope>provided</scope><!-- Lombok only needed at build time -->
+                </dependency>
+              </dependencies>
+            </dependencyManagement>
+        </profile>
+    </profiles>
     <developers>
         <developer>
             <id>d.b.robinson</id>
