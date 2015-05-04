@@ -264,6 +264,14 @@ public class SakaiProxyImpl implements SakaiProxy {
 	public List<RosterMember> getGroupMembership(String siteId, String groupId) {
 		return getMembership(siteId, groupId, false);
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+    public Boolean getOfficialPicturesByDefault() {
+		return serverConfigurationService.getBoolean(
+				"roster.display.officialPicturesByDefault", true);
+    }
 	
 	private List<RosterMember> getMembership(String siteId, String groupId,
 			boolean includeConnectionStatus) {
