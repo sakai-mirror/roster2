@@ -1168,7 +1168,7 @@
 
     Handlebars.registerHelper('translate', function (key) {
         var t = roster.i18n[key];
-        if (key === 'title_msg') {
+        if (key === 'title_msg' && window.console) {
             console.log('VAL:' + t);
         }
         return roster.i18n[key];
